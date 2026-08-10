@@ -1,0 +1,9 @@
+{
+  "name":"TJ Life OS",
+  "short_name":"Life OS",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#0b0f14",
+  "theme_color":"#0b0f14",
+  "description":"A local-first personal dashboard for money, streaming, fitness, skills, and daily missions."
+}
