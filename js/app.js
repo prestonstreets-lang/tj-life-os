@@ -1,15 +1,16 @@
 import { store } from './store.js';
 import { SYSTEMS, uid } from './data.js';
-import { compareDateOnly, formatDayLabel, toLocalDateKey } from './date.js';
+import { compareDateOnly, formatDayLabel, parseLocalDate, toLocalDateKey } from './date.js';
 import { applyXpDelta } from './progression.js';
 import { buildJobSearchLinks, buildResumePrompt, scoreJob } from './career.js';
 import { THEME_PACKS, normalizeThemeSettings, resolveTheme } from './themes.js';
 import { parseVoiceCommand } from './voice.js';
+import { addCalendarDays, calendarMonthGrid, calendarWeek, dateTimeFromLocalInputs, sameCalendarMonth, shiftCalendar } from './calendar.js';
 
 const app = document.querySelector('#app');
 const bootSplash = document.querySelector('#bootSplash');
 const toastRegion = document.querySelector('#toastRegion');
-const validRoutes = new Set(['home', 'money', 'missions', 'streaming', 'body', 'learning', 'analytics', 'career', 'systems', 'settings', 'capture', 'voice']);
+const validRoutes = new Set(['home', 'money', 'missions', 'streaming', 'body', 'learning', 'analytics', 'career', 'calendar', 'systems', 'settings', 'capture', 'voice']);
 let state = store.getState();
 let captureType = 'note';
 let installPrompt = null;
@@ -17,6 +18,8 @@ let refreshing = false;
 let overlayReturn = null;
 let voiceRecognition = null;
 let voiceListening = false;
+let calendarAnchor = toLocalDateKey();
+let calendarSelected = toLocalDateKey();
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
 const money = value => new Intl.NumberFormat(undefined, { style: 'currency', currency: state.settings.currency || 'USD', maximumFractionDigits: 0 }).format(Number(value) || 0);
@@ -124,6 +127,8 @@ function homeView() {
   const circumference = 2 * Math.PI * 54;
   const dash = circumference * (xpPct / 100);
   const today = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date());
+  const todayKey = toLocalDateKey();
+  const todayEvents = state.calendar.filter(event => toLocalDateKey(event.startsAt) === todayKey).sort((a,b)=>a.startsAt.localeCompare(b.startsAt));
   const rankedJobs = state.career.opportunities.map(item => ({ ...item, ...scoreJob(item, state.career.profile) })).sort((a, b) => b.score - a.score);
   const topJob = rankedJobs[0];
   return `<main class="view" data-view="home">
@@ -164,8 +169,8 @@ function homeView() {
     </section>
 
     <section class="section">
-      <div class="section-head"><h2>Today’s Calendar</h2><button class="section-link" data-route="capture">Add event</button></div>
-      ${state.calendar.length ? `<div class="calendar-strip">${state.calendar.map(event => `<button class="calendar-event" style="--system:${system(event.system).accent}" data-route="home/${event.id}"><time>${timeLabel(event.startsAt)}</time><strong>${escapeHtml(event.title)}</strong>${ownerChip(event.ownerId)}</button>`).join('')}</div>` : `<div class="glass">${emptyState('No events yet', 'V1 had no calendar records to migrate.', 'capture', 'Add an event')}</div>`}
+      <div class="section-head"><h2>Today’s Calendar</h2><button class="section-link" data-route="calendar">Open full calendar</button></div>
+      ${todayEvents.length ? `<div class="calendar-strip">${todayEvents.map(event => `<button class="calendar-event" style="--system:${system(event.system).accent}" data-route="calendar/${event.id}"><time>${timeLabel(event.startsAt)}</time><strong>${escapeHtml(event.title)}</strong>${ownerChip(event.ownerId)}</button>`).join('')}</div>` : `<div class="glass">${emptyState('Today is open', 'No household events are scheduled for today.', 'calendar', 'Open calendar')}</div>`}
     </section>
 
     <div class="home-lower">
@@ -304,6 +309,64 @@ function analyticsView() {
   </main>`;
 }
 
+function calendarItemsFor(dateKey) {
+  const events = state.calendar.filter(item => toLocalDateKey(item.startsAt) === dateKey).map(item => ({ ...item, kind:'event', system:item.system || 'calendar', route:`calendar/${item.id}`, time:timeLabel(item.startsAt), sort:item.startsAt }));
+  const bills = state.finance.bills.filter(item => item.dueDate === dateKey).map(item => ({ ...item, kind:'bill', system:'money', route:`money/${item.id}`, time:'Bill', sort:`${dateKey}T23:00`, detail:money(item.amount) }));
+  const workouts = state.body.workouts.filter(item => item.date === dateKey).map(item => ({ ...item, kind:'workout', system:'body', route:`body/${item.id}`, time:'Workout', sort:`${dateKey}T18:00`, detail:`${item.duration} min` }));
+  const dayName = new Intl.DateTimeFormat('en-US',{weekday:'short'}).format(parseLocalDate(dateKey));
+  const streams = state.streaming.schedule.filter(item => item.day === dayName).map(item => ({ ...item, kind:'stream', system:'streaming', route:`streaming/${item.id}`, time:item.time, sort:`${dateKey}T19:00`, detail:'Streaming schedule' }));
+  return [...events, ...bills, ...workouts, ...streams].sort((a,b) => String(a.sort).localeCompare(String(b.sort)));
+}
+
+function calendarItemButton(item, compact = false) {
+  const info = system(item.system);
+  return `<button class="calendar-signal ${compact ? 'compact' : ''}" style="--system:${info.accent}" data-route="${item.route}"><i>${item.kind === 'bill' ? '◇' : item.kind === 'workout' ? '⬡' : item.kind === 'stream' ? '◉' : '●'}</i><span><strong>${escapeHtml(item.title)}</strong>${compact ? '' : `<small>${escapeHtml(item.time)}${item.detail ? ` · ${escapeHtml(item.detail)}` : ''}</small>`}</span>${compact ? '' : ownerChip(item.ownerId)}</button>`;
+}
+
+function calendarDayInspector(dateKey) {
+  const items = calendarItemsFor(dateKey);
+  const incomplete = state.missions.filter(item => !item.completed).slice(0,3);
+  return `<aside class="calendar-inspector">
+    <section class="glass calendar-day-card"><div class="day-orbit"><span>${new Intl.DateTimeFormat(undefined,{weekday:'short'}).format(parseLocalDate(dateKey))}</span><strong>${parseLocalDate(dateKey).getDate()}</strong></div><div><p class="eyebrow">Selected day</p><h2>${new Intl.DateTimeFormat(undefined,{month:'long',day:'numeric'}).format(parseLocalDate(dateKey))}</h2><p>${items.length} scheduled signals · ${incomplete.length} priority missions</p></div></section>
+    <section class="glass calendar-agenda"><div class="section-head"><h2>Day Agenda</h2><span>${items.length} items</span></div>${items.length ? items.map(item => calendarItemButton(item)).join('') : emptyState('Open timeline', 'Nothing is scheduled for this day yet.', null)}</section>
+    <section class="glass calendar-priorities"><div class="section-head"><h2>Priority Missions</h2><span>${state.missions.filter(item=>item.completed).length}/${state.missions.length}</span></div>${incomplete.length ? incomplete.map(item => `<button data-route="missions/${item.id}"><i>✦</i><span><strong>${escapeHtml(item.title)}</strong><small>+${item.xp} XP · ${escapeHtml(owner(item.ownerId).label)}</small></span></button>`).join('') : `<div class="calendar-clear">✓ Perfect Day protocol complete</div>`}</section>
+    <form class="glass calendar-event-form" id="calendarEventForm"><div class="section-head"><h2>Add to Timeline</h2><span>Ownership-aware</span></div><div class="field-grid"><label class="field-label">Title<input class="field" name="title" required maxlength="80" placeholder="Appointment, deadline or plan" /></label><div class="calendar-form-row"><label class="field-label">Date<input class="field" name="date" type="date" required value="${dateKey}" /></label><label class="field-label">Time<input class="field" name="time" type="time" required value="09:00" /></label></div><div class="calendar-form-row"><label class="field-label">System<select class="field" name="system">${['calendar','money','missions','career','body','streaming','learning'].map(key => `<option value="${key}">${escapeHtml(system(key).label)}</option>`).join('')}</select></label><label class="field-label">Ownership<select class="field" name="ownerId">${memberOptions()}</select></label></div><label class="field-label">Details<textarea class="field" name="detail" rows="2" maxlength="180" placeholder="Optional context"></textarea></label></div><button class="primary-button" type="submit">Add calendar event</button></form>
+  </aside>`;
+}
+
+function calendarMonthBoard() {
+  const days = calendarMonthGrid(calendarAnchor, state.settings.weekStartsOn || 0);
+  const today = toLocalDateKey();
+  const weekdays = Array.from({length:7},(_,index) => new Intl.DateTimeFormat(undefined,{weekday:'short'}).format(parseLocalDate(days[index])));
+  return `<section class="glass month-board"><div class="calendar-weekdays">${weekdays.map(day => `<span>${day}</span>`).join('')}</div><div class="calendar-month-grid">${days.map(dateKey => { const items=calendarItemsFor(dateKey); const selected=dateKey===calendarSelected; return `<div class="calendar-cell ${sameCalendarMonth(dateKey,calendarAnchor) ? '' : 'outside'} ${dateKey===today ? 'today' : ''} ${selected ? 'selected' : ''}"><button class="calendar-date" data-action="select-calendar-day" data-date="${dateKey}" aria-label="Select ${dayLabel(dateKey)}"><span>${parseLocalDate(dateKey).getDate()}</span>${dateKey===today ? '<b>Today</b>' : ''}</button><div class="calendar-cell-signals">${items.slice(0,3).map(item => calendarItemButton(item,true)).join('')}${items.length>3 ? `<small>+${items.length-3} more</small>` : ''}</div></div>`; }).join('')}</div></section>`;
+}
+
+function calendarWeekBoard() {
+  const days = calendarWeek(calendarAnchor, state.settings.weekStartsOn || 0);
+  const today = toLocalDateKey();
+  return `<section class="glass week-board">${days.map(dateKey => { const items=calendarItemsFor(dateKey); return `<div class="week-column ${dateKey===today?'today':''} ${dateKey===calendarSelected?'selected':''}"><button class="week-date" data-action="select-calendar-day" data-date="${dateKey}"><span>${new Intl.DateTimeFormat(undefined,{weekday:'short'}).format(parseLocalDate(dateKey))}</span><strong>${parseLocalDate(dateKey).getDate()}</strong></button><div class="week-signals">${items.length ? items.map(item=>calendarItemButton(item)).join('') : '<span class="week-open">Open</span>'}</div></div>`; }).join('')}</section>`;
+}
+
+function calendarDayBoard() {
+  const items = calendarItemsFor(calendarSelected);
+  const hours = Array.from({length:15},(_,i)=>i+7);
+  return `<section class="glass day-timeline"><div class="day-timeline-head"><p class="eyebrow">Day operations</p><h2>${new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric'}).format(parseLocalDate(calendarSelected))}</h2></div>${hours.map(hour => { const slot=items.filter(item => item.kind !== 'event' ? hour===18 : new Date(item.startsAt).getHours()===hour); return `<div class="timeline-hour"><time>${new Intl.DateTimeFormat(undefined,{hour:'numeric'}).format(new Date(2000,0,1,hour))}</time><div>${slot.map(item=>calendarItemButton(item)).join('')}</div></div>`; }).join('')}</section>`;
+}
+
+function calendarView() {
+  const mode = ['month','week','day'].includes(state.settings.calendarView) ? state.settings.calendarView : 'month';
+  const visibleDates = mode === 'month' ? calendarMonthGrid(calendarAnchor,state.settings.weekStartsOn||0).filter(key=>sameCalendarMonth(key,calendarAnchor)) : mode === 'week' ? calendarWeek(calendarAnchor,state.settings.weekStartsOn||0) : [calendarSelected];
+  const visibleItems = visibleDates.flatMap(calendarItemsFor);
+  const visibleBills = visibleItems.filter(item=>item.kind==='bill');
+  const title = mode === 'month' ? new Intl.DateTimeFormat(undefined,{month:'long',year:'numeric'}).format(parseLocalDate(calendarAnchor)) : mode === 'week' ? `${dayLabel(visibleDates[0])} — ${dayLabel(visibleDates[6])}` : dayLabel(calendarSelected);
+  return `<main class="view calendar-view" style="--system:${system('calendar').accent}">
+    ${viewHeader('Household Timeline', 'A collective month-to-week-to-day roadmap for bills, priorities, appointments and momentum.', 'Timeline command')}
+    <section class="glass calendar-command"><div><p class="eyebrow">Operational window</p><h2>${escapeHtml(title)}</h2></div><div class="calendar-controls"><div class="calendar-jump"><button data-action="calendar-shift" data-direction="-1" aria-label="Previous ${mode}">‹</button><button data-action="calendar-today">Today</button><button data-action="calendar-shift" data-direction="1" aria-label="Next ${mode}">›</button></div><div class="calendar-modes">${['month','week','day'].map(value=>`<button class="${mode===value?'active':''}" data-action="set-calendar-view" data-value="${value}">${value[0].toUpperCase()+value.slice(1)}</button>`).join('')}</div></div></section>
+    <section class="calendar-scoreboard"><button class="glass" data-route="money"><span>Bills in view</span><strong>${visibleBills.length}</strong><small>${money(visibleBills.reduce((sum,item)=>sum+Number(item.amount||0),0))} scheduled</small></button><button class="glass" data-route="missions"><span>Mission momentum</span><strong>${state.missions.filter(item=>item.completed).length}/${state.missions.length}</strong><small>${state.game.streak}-day streak</small></button><button class="glass" data-route="calendar"><span>Timeline signals</span><strong>${visibleItems.length}</strong><small>${state.calendar.length} household events</small></button></section>
+    <div class="calendar-layout"><div>${mode==='month' ? calendarMonthBoard() : mode==='week' ? calendarWeekBoard() : calendarDayBoard()}</div>${calendarDayInspector(calendarSelected)}</div>
+  </main>`;
+}
+
 function memberOptions(selected = 'household') {
   return [{ id: 'household', name: 'Shared Household' }, ...state.household.members]
     .map(item => `<option value="${item.id}" ${item.id === selected ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('');
@@ -370,7 +433,7 @@ function careerView() {
 }
 
 function systemsView() {
-  const cards = ['career','streaming','body','learning','analytics'];
+  const cards = ['calendar','career','streaming','body','learning','analytics'];
   return `<main class="view">${viewHeader('System Matrix', 'Open a complete visual command center for each area of household growth.', 'All operational systems')}<div class="stats-grid">${cards.map(key => { const info=system(key); return `<button class="glass interactive-card module-hero" style="--system:${info.accent};min-height:210px" data-route="${key}"><div><p class="eyebrow" style="color:${info.accent}">${info.eyebrow}</p><h2 style="font-size:32px">${info.label}</h2><p>Open system command ›</p></div></button>`; }).join('')}</div></main>`;
 }
 
@@ -401,6 +464,7 @@ function detailFor(base, id) {
     learning: [...state.learning.skills, ...state.learning.resources],
     analytics: state.activity,
     career: state.career.opportunities,
+    calendar: state.calendar,
     home: state.calendar
   };
   return collections[base]?.find(item => item.id === id) || null;
@@ -424,6 +488,7 @@ function detailSheet(base, id) {
   if (item?.level != null) details.push(['Level', item.level]);
   if (item?.xp != null) details.push(['XP', item.xp]);
   if (item?.duration) details.push(['Duration', `${item.duration} minutes`]);
+  if (item?.startsAt) details.push(['Date', dayLabel(item.startsAt)], ['Time', timeLabel(item.startsAt)], ['System', system(item.system).label]);
   if (item?.company) details.push(['Company', item.company]);
   if (item?.location) details.push(['Location', item.location]);
   if (base === 'career' && item) details.push(['Match score', `${scoreJob(item, state.career.profile).score}%`], ['Pipeline', item.status || 'Saved']);
@@ -437,6 +502,7 @@ function detailSheet(base, id) {
   if (base === 'body' && item?.duration) action = `<button class="primary-button" data-action="toggle-workout" data-id="${item.id}">${item.completed ? 'Mark incomplete' : 'Complete workout'}</button>`;
   if (base === 'learning' && item?.xp != null) action = `<button class="primary-button" data-action="add-skill-xp" data-id="${item.id}">Add 25 skill XP</button>`;
   if (base === 'career' && item) action = `<button class="primary-button" data-action="advance-job" data-id="${item.id}">Advance from ${escapeHtml(item.status || 'Saved')}</button><button class="secondary-button" data-action="prepare-resume" data-id="${item.id}">Tailor resume</button>${item.url ? `<button class="secondary-button" data-action="open-job-listing" data-id="${item.id}">Open listing ↗</button>` : ''}`;
+  if (base === 'calendar' && item?.startsAt) action = `<button class="primary-button" data-action="move-event-today" data-id="${item.id}">Move to today</button><button class="danger-button" data-action="delete-calendar-event" data-id="${item.id}">Delete event</button>`;
   return `<div class="sheet-wrap" data-action="close-overlay"><section class="sheet" style="--system:${info.accent}" role="dialog" aria-modal="true" aria-labelledby="detailTitle" data-sheet><div class="sheet-handle"></div><header class="sheet-header"><div><p class="eyebrow" style="color:${info.accent}">${info.eyebrow}</p><h2 id="detailTitle">${escapeHtml(title)}</h2></div><button class="sheet-close" data-action="close-overlay" aria-label="Close">×</button></header><div class="detail-grid">${details.map(([label,value]) => `<div class="detail-block"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></div>`).join('')}</div><div class="button-row">${action}<button class="secondary-button" data-route="${base}">Open full ${escapeHtml(info.label)} system</button></div></section></div>`;
 }
 
@@ -459,7 +525,7 @@ function render() {
   applyTheme();
   if (!['capture','voice'].includes(route.base) && !route.detail) overlayReturn = null;
   const base = ['capture','voice'].includes(route.base) ? 'home' : route.base;
-  const views = { home: homeView, money: moneyView, missions: missionsView, streaming: streamingView, body: bodyView, learning: learningView, analytics: analyticsView, career: careerView, systems: systemsView, settings: settingsView };
+  const views = { home: homeView, money: moneyView, missions: missionsView, streaming: streamingView, body: bodyView, learning: learningView, analytics: analyticsView, career: careerView, calendar: calendarView, systems: systemsView, settings: settingsView };
   document.body.dataset.effects = state.settings.effects || 'balanced';
   app.innerHTML = `${topbar()}${(views[base] || homeView)()}${bottomNav(base)}${route.base === 'capture' ? captureSheet() : route.base === 'voice' ? voiceSheet() : route.detail ? detailSheet(base, route.detail) : ''}`;
 }
@@ -610,6 +676,17 @@ async function handleAction(button) {
     toast('+25 skill XP'); return closeOverlayIfDetail();
   }
   if (action === 'capture-type') { captureType = button.dataset.value; return render(); }
+  if (action === 'set-calendar-view') { store.update(next => { next.settings.calendarView=button.dataset.value; }); return; }
+  if (action === 'select-calendar-day') { calendarSelected=button.dataset.date; calendarAnchor=button.dataset.date; return render(); }
+  if (action === 'calendar-today') { calendarAnchor=toLocalDateKey(); calendarSelected=calendarAnchor; return render(); }
+  if (action === 'calendar-shift') { const mode=state.settings.calendarView||'month'; calendarAnchor=shiftCalendar(calendarAnchor,mode,Number(button.dataset.direction)); calendarSelected=calendarAnchor; return render(); }
+  if (action === 'move-event-today') {
+    store.update(next => { const item=next.calendar.find(entry=>entry.id===id); if(!item)return; const original=new Date(item.startsAt); const today=parseLocalDate(toLocalDateKey()); today.setHours(original.getHours(),original.getMinutes(),0,0); item.startsAt=today.toISOString(); }); calendarAnchor=toLocalDateKey(); calendarSelected=calendarAnchor; toast('Event moved to today.'); return go('calendar',true);
+  }
+  if (action === 'delete-calendar-event') {
+    if (!confirm('Delete this calendar event?')) return;
+    store.update(next => { next.calendar=next.calendar.filter(entry=>entry.id!==id); }); toast('Calendar event deleted.'); return go('calendar',true);
+  }
   if (action === 'set-theme') { store.update(next => { next.settings.theme = normalizeThemeSettings({ ...next.settings.theme, pack: button.dataset.value, autoTime: false }); }); return toast(`${button.textContent.trim().split(/\s{2,}|\n/)[0]} theme active.`); }
   if (action === 'set-effects') { store.update(next => { next.settings.effects=button.dataset.value; }); return toast(`Effects set to ${button.dataset.value}.`); }
   if (action === 'open-job-provider') {
@@ -656,6 +733,7 @@ app.addEventListener('click', event => {
 
 app.addEventListener('keydown', event => {
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[role="button"][data-route]')) { event.preventDefault(); go(event.target.dataset.route); }
+  if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[role="button"][data-action="select-calendar-day"]')) { event.preventDefault(); handleAction(event.target); }
   if (event.key === 'Escape' && (routeParts().detail || ['capture','voice'].includes(routeParts().base))) closeOverlay();
 });
 
@@ -691,6 +769,10 @@ app.addEventListener('submit', event => {
     toast('Truthful resume tailoring prompt generated.');
   }
   if (event.target.id === 'voiceForm') { const data=new FormData(event.target); routeVoiceCommand(String(data.get('transcript')||''),String(data.get('ownerId')||'household')); }
+  if (event.target.id === 'calendarEventForm') {
+    const data=new FormData(event.target); const title=String(data.get('title')||'').trim(); const ownerId=String(data.get('ownerId')||'household'); const systemKey=String(data.get('system')||'calendar'); const date=String(data.get('date')||calendarSelected); const startsAt=dateTimeFromLocalInputs(date,String(data.get('time')||'09:00')); const detail=String(data.get('detail')||'').trim();
+    store.update(next => { const item={id:uid('event'),title,detail,startsAt,system:systemKey,ownerId}; next.calendar.push(item); next.activity.unshift({id:uid('activity'),title:`Scheduled ${title}`,detail:`${dayLabel(date)} · ${timeLabel(startsAt)}`,system:systemKey,ownerId,occurredAt:new Date().toISOString()}); }); calendarSelected=date; calendarAnchor=date; toast('Event added to the household timeline.');
+  }
 });
 
 app.addEventListener('change', async event => {

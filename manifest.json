@@ -21,6 +21,7 @@
     {"name":"Quick Add","short_name":"Add","url":"./#capture","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]},
     {"name":"Money Command","short_name":"Money","url":"./#money","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]},
     {"name":"Today’s Missions","short_name":"Missions","url":"./#missions","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]},
-    {"name":"Career Command","short_name":"Career","url":"./#career","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]}
+    {"name":"Career Command","short_name":"Career","url":"./#career","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]},
+    {"name":"Household Calendar","short_name":"Calendar","url":"./#calendar","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]}
   ]
 }

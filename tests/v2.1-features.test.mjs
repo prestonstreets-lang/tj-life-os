@@ -4,6 +4,7 @@ import { buildJobSearchLinks, buildResumePrompt, scoreJob } from '../js/career.j
 import { hydrateState } from '../js/state.js';
 import { normalizeThemeSettings, packForTime, resolveTheme } from '../js/themes.js';
 import { parseVoiceCommand } from '../js/voice.js';
+import { addCalendarDays, calendarMonthGrid, calendarWeek, dateTimeFromLocalInputs, shiftCalendar } from '../js/calendar.js';
 
 test('theme packs normalize invalid settings and resolve custom spectrum safely', () => {
   const normalized = normalizeThemeSettings({ pack: 'missing', customHue: 999, glow: 'extreme' });
@@ -56,4 +57,20 @@ test('hydrating an existing V2 state preserves records and adds empty career sta
   assert.deepEqual(hydrated.missions, []);
   assert.deepEqual(hydrated.finance.bills, []);
   assert.deepEqual(hydrated.career.opportunities, []);
+});
+
+test('calendar month, week and day navigation remain local-date safe', () => {
+  const month = calendarMonthGrid('2026-08-11', 0);
+  assert.equal(month.length, 42);
+  assert.equal(month[0], '2026-07-26');
+  assert.equal(month[41], '2026-09-05');
+  assert.deepEqual(calendarWeek('2026-08-11', 0), ['2026-08-09','2026-08-10','2026-08-11','2026-08-12','2026-08-13','2026-08-14','2026-08-15']);
+  assert.equal(addCalendarDays('2026-03-08', 1), '2026-03-09');
+  assert.equal(shiftCalendar('2026-01-31', 'month', 1), '2026-02-01');
+  const local = new Date(dateTimeFromLocalInputs('2026-08-11','09:30'));
+  assert.equal(local.getFullYear(), 2026);
+  assert.equal(local.getMonth(), 7);
+  assert.equal(local.getDate(), 11);
+  assert.equal(local.getHours(), 9);
+  assert.equal(local.getMinutes(), 30);
 });

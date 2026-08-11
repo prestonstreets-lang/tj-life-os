@@ -10,6 +10,7 @@ export const SYSTEMS = {
   body: { label: 'Body', eyebrow: 'Bio systems', icon: '⬡', accent: '#ff9d5c' },
   learning: { label: 'Learning', eyebrow: 'AI skill matrix', icon: '⌁', accent: '#63e6ff' },
   analytics: { label: 'Analytics', eyebrow: 'Signal observatory', icon: '⌁', accent: '#ffc857' },
+  calendar: { label: 'Calendar', eyebrow: 'Timeline command', icon: '▦', accent: '#63e6ff' },
   career: { label: 'Career', eyebrow: 'Opportunity command', icon: '⌖', accent: '#76e6b5' }
 };
 
@@ -37,7 +38,7 @@ export function createDefaultState() {
         { id: 'member-2', name: 'Member 2', color: '#ff6fcf', avatar: 'M2' }
       ]
     },
-    settings: { effects: 'balanced', currency: 'USD', weekStartsOn: 1, theme: { ...DEFAULT_THEME_SETTINGS }, voiceLanguage: 'en-US' },
+    settings: { effects: 'balanced', currency: 'USD', weekStartsOn: 0, calendarView: 'month', theme: { ...DEFAULT_THEME_SETTINGS }, voiceLanguage: 'en-US' },
     game: {
       level: 12, xp: 680, xpToNext: 1000, streak: 7, perfectDays: 3,
       categoryLevels: { money: 8, body: 6, streaming: 5, learning: 9, household: 7 },
