@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Our Life OS app icon">
+  <defs>
+    <linearGradient id="bg" x1="54" y1="32" x2="458" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#172655"/><stop offset=".48" stop-color="#090e25"/><stop offset="1" stop-color="#040711"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="92" y1="82" x2="430" y2="440" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#68e7ff"/><stop offset=".48" stop-color="#8b7cff"/><stop offset="1" stop-color="#ff5fc8"/>
+    </linearGradient>
+    <radialGradient id="core"><stop stop-color="#dffaff"/><stop offset=".28" stop-color="#71e9ff"/><stop offset="1" stop-color="#7b6cff" stop-opacity="0"/></radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="13" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M0 365 148 217l93 93L512 39v473H0Z" fill="#4f46e5" opacity=".1"/>
+  <circle cx="256" cy="256" r="171" fill="none" stroke="#76dcff" stroke-opacity=".12" stroke-width="2"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="url(#ring)" stroke-width="18" stroke-dasharray="706 237" stroke-linecap="round" transform="rotate(-55 256 256)" filter="url(#glow)"/>
+  <circle cx="256" cy="256" r="111" fill="#09112b" stroke="#8b94ff" stroke-opacity=".48" stroke-width="3"/>
+  <path d="M207 184v94c0 47 25 72 65 72s65-25 65-72v-94h-37v91c0 25-9 39-28 39s-28-14-28-39v-91Z" fill="#f7fbff"/>
+  <path d="M178 199h38v37h-38zm0 76h38v37h-38z" fill="#68e7ff"/>
+  <circle cx="256" cy="256" r="48" fill="url(#core)" opacity=".22" filter="url(#glow)"/>
+  <circle cx="399" cy="147" r="9" fill="#ff68cf" filter="url(#glow)"/>
+  <circle cx="119" cy="347" r="7" fill="#68e7ff" filter="url(#glow)"/>
+</svg>
