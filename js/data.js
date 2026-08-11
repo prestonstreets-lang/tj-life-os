@@ -1,4 +1,5 @@
 import { toLocalDateKey } from './date.js';
+import { DEFAULT_THEME_SETTINGS } from './themes.js';
 
 export const SCHEMA_VERSION = 2;
 
@@ -8,7 +9,9 @@ export const SYSTEMS = {
   streaming: { label: 'Streaming', eyebrow: 'Creator operations', icon: '◉', accent: '#ff5d8f' },
   body: { label: 'Body', eyebrow: 'Bio systems', icon: '⬡', accent: '#ff9d5c' },
   learning: { label: 'Learning', eyebrow: 'AI skill matrix', icon: '⌁', accent: '#63e6ff' },
-  analytics: { label: 'Analytics', eyebrow: 'Signal observatory', icon: '⌁', accent: '#ffc857' }
+  analytics: { label: 'Analytics', eyebrow: 'Signal observatory', icon: '⌁', accent: '#ffc857' },
+  calendar: { label: 'Calendar', eyebrow: 'Timeline command', icon: '▦', accent: '#63e6ff' },
+  career: { label: 'Career', eyebrow: 'Opportunity command', icon: '⌖', accent: '#76e6b5' }
 };
 
 const isoDay = (offset = 0) => {
@@ -35,7 +38,7 @@ export function createDefaultState() {
         { id: 'member-2', name: 'Member 2', color: '#ff6fcf', avatar: 'M2' }
       ]
     },
-    settings: { effects: 'balanced', currency: 'USD', weekStartsOn: 1 },
+    settings: { effects: 'balanced', currency: 'USD', weekStartsOn: 0, calendarView: 'month', theme: { ...DEFAULT_THEME_SETTINGS }, voiceLanguage: 'en-US' },
     game: {
       level: 12, xp: 680, xpToNext: 1000, streak: 7, perfectDays: 3,
       categoryLevels: { money: 8, body: 6, streaming: 5, learning: 9, household: 7 },
@@ -135,6 +138,10 @@ export function createDefaultState() {
         miss: 'Reserved funds are behind the rent allocation checkpoint.',
         priority: 'Close the daily earning gap before the next bill window.'
       }
+    },
+    career: {
+      profile: { location: '', radius: 25, targetRoles: '', skills: '', salaryMin: 0, workMode: 'any', resumeText: '', ownerId: 'member-1' },
+      opportunities: [], logs: [], searches: [], resumePrompts: [], activeJobId: null
     }
   };
 }
