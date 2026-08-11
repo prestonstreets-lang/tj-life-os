@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Our Life OS",
   "short_name": "Life OS",
-  "description": "A shared household command center for money, missions, health, learning and growth.",
+  "description": "A shared household command center for money, missions, vision, health, learning and growth.",
   "start_url": "./#home",
   "scope": "./",
   "display": "standalone",
@@ -20,6 +20,7 @@
   "shortcuts": [
     {"name":"Quick Add","short_name":"Add","url":"./#capture","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]},
     {"name":"Money Command","short_name":"Money","url":"./#money","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]},
-    {"name":"Today’s Missions","short_name":"Missions","url":"./#missions","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]}
+    {"name":"Today’s Missions","short_name":"Missions","url":"./#missions","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]},
+    {"name":"Vision Board","short_name":"Vision","url":"./#vision","icons":[{"src":"./assets/icon-192.png","sizes":"192x192"}]}
   ]
 }

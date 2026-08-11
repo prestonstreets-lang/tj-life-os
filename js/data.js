@@ -1,6 +1,6 @@
 import { toLocalDateKey } from './date.js';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const SYSTEMS = {
   money: { label: 'Money', eyebrow: 'Financial command', icon: '◈', accent: '#5ef2a5' },
@@ -8,7 +8,8 @@ export const SYSTEMS = {
   streaming: { label: 'Streaming', eyebrow: 'Creator operations', icon: '◉', accent: '#ff5d8f' },
   body: { label: 'Body', eyebrow: 'Bio systems', icon: '⬡', accent: '#ff9d5c' },
   learning: { label: 'Learning', eyebrow: 'AI skill matrix', icon: '⌁', accent: '#63e6ff' },
-  analytics: { label: 'Analytics', eyebrow: 'Signal observatory', icon: '⌁', accent: '#ffc857' }
+  analytics: { label: 'Analytics', eyebrow: 'Signal observatory', icon: '⌁', accent: '#ffc857' },
+  vision: { label: 'Vision Board', eyebrow: 'Aspirational command', icon: '◐', accent: '#ffd66b' }
 };
 
 const isoDay = (offset = 0) => {
@@ -135,7 +136,16 @@ export function createDefaultState() {
         miss: 'Reserved funds are behind the rent allocation checkpoint.',
         priority: 'Close the daily earning gap before the next bill window.'
       }
-    }
+    },
+    visionBoards: [],
+    visionItems: [],
+    visionMedia: [],
+    goalLinks: [],
+    goalMilestones: [],
+    rewards: [],
+    rewardUnlocks: [],
+    motivationSettings: { enabled:true, frequency:'daily', intensity:'balanced', autoRotate:true, effects:true, rotationOffset:0, featuredItemIds:[], customStatements:[], dismissedRules:[] },
+    motivationHistory: []
   };
 }
 

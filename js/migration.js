@@ -50,6 +50,14 @@ export function migrateLegacyState(legacy, options = {}) {
     id: makeId('capture'), type: 'note', title: String(text), createdAt: nowIso, ownerId: 'household'
   })) : [];
   next.analytics = { dailyScores: [], summaries: { win: '', miss: '', priority: '' } };
+  next.visionBoards = [];
+  next.visionItems = [];
+  next.visionMedia = [];
+  next.goalLinks = [];
+  next.goalMilestones = [];
+  next.rewards = [];
+  next.rewardUnlocks = [];
+  next.motivationHistory = [];
 
   return next;
 }
