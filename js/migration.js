@@ -58,6 +58,7 @@ export function migrateLegacyState(legacy, options = {}) {
   next.rewards = [];
   next.rewardUnlocks = [];
   next.motivationHistory = [];
+  next.career = { ...next.career, opportunities: [], logs: [], searches: [], resumePrompts: [], activeJobId: null };
 
   return next;
 }

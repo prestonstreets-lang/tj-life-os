@@ -2,6 +2,7 @@ import { createDefaultState, SCHEMA_VERSION, uid } from './data.js';
 import { migrateLegacyState } from './migration.js';
 import { upgradeVisionState } from './vision-migration.js';
 import { exportMediaRecords, importMediaRecords, mediaStore, resizeVisionImage } from './media-store.js';
+import { hydrateState } from './state.js';
 
 const V2_KEY = 'ourLifeOS:v2';
 const LEGACY_KEY = 'tjLifeOS';
@@ -44,7 +45,7 @@ function validV2(value) {
 function loadInitialState() {
   const current = safeRead(V2_KEY);
   if (validV2(current)) {
-    const upgraded=upgradeVisionState(current);
+    const upgraded=upgradeVisionState(hydrateState(current));
     safeWrite(V2_KEY,upgraded);
     return upgraded;
   }
@@ -53,7 +54,7 @@ function loadInitialState() {
     catch (error) { console.warn('Unable to preserve malformed V2 recovery data',error); }
   }
   const legacy = safeRead(LEGACY_KEY);
-  const initial = upgradeVisionState(legacy ? migrateLegacy(legacy) : createDefaultState());
+  const initial = upgradeVisionState(hydrateState(legacy ? migrateLegacy(legacy) : createDefaultState()));
   safeWrite(V2_KEY, initial);
   return initial;
 }
@@ -91,7 +92,7 @@ export const store = {
   importData(json) {
     const parsed = typeof json === 'string' ? JSON.parse(json) : json;
     if (!validV2(parsed)) throw new Error('This file is not a valid Our Life OS V2 export.');
-    commit(upgradeVisionState(clone(parsed)));
+    commit(upgradeVisionState(hydrateState(clone(parsed))));
   },
   async saveVisionMedia({ id, file, altText='' }) {
     const blob=await resizeVisionImage(file);
@@ -105,8 +106,8 @@ export const store = {
   async clearVisionMedia() { return mediaStore.clear(); },
   async mediaUsage() { return mediaStore.usage(); },
   async exportBundle({includeMedia=true}={}) { return JSON.stringify({format:'our-life-os-v3-bundle',metadata:state,media:includeMedia?await exportMediaRecords():[],mediaIncluded:includeMedia},null,2); },
-  async importBundle(json) { const bundle=typeof json==='string'?JSON.parse(json):json; if(bundle?.format!=='our-life-os-v3-bundle'||!validV2(bundle.metadata))throw new Error('This is not a valid Our Life OS Vision bundle.'); commit(upgradeVisionState(clone(bundle.metadata))); if(bundle.mediaIncluded)await importMediaRecords(bundle.media); return {mediaIncluded:Boolean(bundle.mediaIncluded)}; },
-  resetV2() { commit(upgradeVisionState(createDefaultState())); },
+  async importBundle(json) { const bundle=typeof json==='string'?JSON.parse(json):json; if(bundle?.format!=='our-life-os-v3-bundle'||!validV2(bundle.metadata))throw new Error('This is not a valid Our Life OS Vision bundle.'); commit(upgradeVisionState(hydrateState(clone(bundle.metadata)))); if(bundle.mediaIncluded)await importMediaRecords(bundle.media); return {mediaIncluded:Boolean(bundle.mediaIncluded)}; },
+  resetV2() { commit(upgradeVisionState(hydrateState(createDefaultState()))); },
   consumeMigrationNotice() {
     const notice = migrationNotice;
     migrationNotice = null;
