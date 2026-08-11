@@ -1,5 +1,7 @@
 import { store } from './store.js';
 import { SYSTEMS, uid } from './data.js';
+import { compareDateOnly, formatDayLabel, toLocalDateKey } from './date.js';
+import { applyXpDelta } from './progression.js';
 
 const app = document.querySelector('#app');
 const bootSplash = document.querySelector('#bootSplash');
@@ -14,7 +16,7 @@ let overlayReturn = null;
 const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
 const money = value => new Intl.NumberFormat(undefined, { style: 'currency', currency: state.settings.currency || 'USD', maximumFractionDigits: 0 }).format(Number(value) || 0);
 const percent = (value, target) => Math.max(0, Math.min(100, target ? (Number(value) / Number(target)) * 100 : 0));
-const dayLabel = date => new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(date));
+const dayLabel = date => formatDayLabel(date);
 const timeLabel = date => new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(date));
 const system = key => SYSTEMS[key] || { label: 'Household', eyebrow: 'Shared system', icon: '⌂', accent: '#63e6ff' };
 
@@ -52,6 +54,10 @@ function progress(value, target, className = '') {
   return `<div class="progress-track"><div class="progress-fill ${className}" style="width:${percent(value, target).toFixed(1)}%"></div></div>`;
 }
 
+function emptyState(title, detail, route = 'capture', action = 'Add first record') {
+  return `<div class="empty-state"><span aria-hidden="true">◇</span><strong>${escapeHtml(title)}</strong><p>${escapeHtml(detail)}</p>${route ? `<button class="secondary-button" data-route="${route}">${escapeHtml(action)}</button>` : ''}</div>`;
+}
+
 function topbar() {
   const online = navigator.onLine;
   return `<header class="topbar">
@@ -83,7 +89,7 @@ function viewHeader(title, subtitle, eyebrow = 'Our Life OS') {
 
 function homeView() {
   const completed = state.missions.filter(item => item.completed).length;
-  const nextBill = [...state.finance.bills].filter(item => item.status !== 'paid').sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))[0];
+  const nextBill = [...state.finance.bills].filter(item => item.status !== 'paid').sort((a, b) => compareDateOnly(a.dueDate, b.dueDate))[0];
   const xpPct = percent(state.game.xp, state.game.xpToNext);
   const circumference = 2 * Math.PI * 54;
   const dash = circumference * (xpPct / 100);
@@ -119,17 +125,17 @@ function homeView() {
 
     <section class="section">
       <div class="section-head"><h2>Today’s Calendar</h2><button class="section-link" data-route="capture">Add event</button></div>
-      <div class="calendar-strip">${state.calendar.map(event => `<button class="calendar-event" style="--system:${system(event.system).accent}" data-route="home/${event.id}"><time>${timeLabel(event.startsAt)}</time><strong>${escapeHtml(event.title)}</strong>${ownerChip(event.ownerId)}</button>`).join('')}</div>
+      ${state.calendar.length ? `<div class="calendar-strip">${state.calendar.map(event => `<button class="calendar-event" style="--system:${system(event.system).accent}" data-route="home/${event.id}"><time>${timeLabel(event.startsAt)}</time><strong>${escapeHtml(event.title)}</strong>${ownerChip(event.ownerId)}</button>`).join('')}</div>` : `<div class="glass">${emptyState('No events yet', 'V1 had no calendar records to migrate.', 'capture', 'Add an event')}</div>`}
     </section>
 
     <div class="home-lower">
       <section class="section">
         <div class="section-head"><h2>Today’s Missions</h2><button class="section-link" data-route="missions">View board</button></div>
-        <div class="glass list-panel">${state.missions.slice(0, 4).map(missionRow).join('')}</div>
+        <div class="glass list-panel">${state.missions.length ? state.missions.slice(0, 4).map(missionRow).join('') : emptyState('No missions yet', 'Create the household’s first mission.')}</div>
       </section>
       <section class="section">
         <div class="section-head"><h2>Recent Activity</h2><button class="section-link" data-route="analytics">Open history</button></div>
-        <div class="glass list-panel">${state.activity.slice(0, 4).map(activityRow).join('')}</div>
+        <div class="glass list-panel">${state.activity.length ? state.activity.slice(0, 4).map(activityRow).join('') : emptyState('No activity yet', 'New actions will appear here without fabricated history.')}</div>
       </section>
     </div>
   </main>`;
@@ -155,6 +161,7 @@ function moduleHeader(key, title, subtitle, value, valueLabel) {
 }
 
 function bars(values, key = 'analytics') {
+  if (!values.length) return `<div class="chart-empty">No weekly history has been recorded yet.</div>`;
   const max = Math.max(...values, 1);
   return `<div class="chart" style="--system:${system(key).accent}">${values.map((value, index) => `<div class="bar-col" style="--h:${Math.max(8, value / max * 100)}%;animation-delay:${index * 45}ms"><span>${['M','T','W','T','F','S','S'][index] || index + 1}</span></div>`).join('')}</div>`;
 }
@@ -167,8 +174,8 @@ function moneyView() {
     <div class="module-grid section">
       <div>
         <button class="glass interactive-card wide-card boss-card" style="--system:${system('money').accent}" data-route="money/${f.boss.id}"><span class="card-label">Money Boss Battle <i class="arrow">›</i></span><h2>${escapeHtml(f.boss.title)}</h2><div class="boss-health"><i style="width:${fill}%"></i></div><div class="metric-note">${money(f.boss.current)} secured of ${money(f.boss.target)} · Reward +${f.boss.reward} XP</div></button>
-        <section class="section"><div class="section-head"><h2>Income by Source</h2><button class="section-link" data-route="capture">Add income</button></div><div class="glass list-panel">${f.income.slice().reverse().map(item => `<button class="data-row" style="--system:${system('money').accent}" data-route="money/${item.id}"><span class="row-icon">＋</span><span><span class="row-title">${escapeHtml(item.source)}</span><span class="row-detail">${dayLabel(item.date)}</span></span><span class="row-meta"><strong class="positive">+${money(item.amount)}</strong>${ownerChip(item.ownerId)}</span></button>`).join('')}</div></section>
-        <section class="section"><div class="section-head"><h2>Bill Radar Queue</h2><span>${f.bills.filter(item => item.status !== 'paid').length} active</span></div><div class="glass list-panel">${f.bills.map(item => `<div class="data-row" style="--system:${item.status === 'paid' ? '#5ef2a5' : '#ffc857'}" data-route="money/${item.id}" role="button" tabindex="0"><span class="row-icon">${item.status === 'paid' ? '✓' : '◇'}</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${escapeHtml(item.category)} · ${dayLabel(item.dueDate)}</span></span><span class="row-meta"><strong>${money(item.amount)}</strong>${ownerChip(item.ownerId)}</span></div>`).join('')}</div></section>
+        <section class="section"><div class="section-head"><h2>Income by Source</h2><button class="section-link" data-route="capture">Add income</button></div><div class="glass list-panel">${f.income.length ? f.income.slice().reverse().map(item => `<button class="data-row" style="--system:${system('money').accent}" data-route="money/${item.id}"><span class="row-icon">＋</span><span><span class="row-title">${escapeHtml(item.source)}</span><span class="row-detail">${dayLabel(item.date)}</span></span><span class="row-meta"><strong class="positive">+${money(item.amount)}</strong>${ownerChip(item.ownerId)}</span></button>`).join('') : emptyState('No income entries', 'Only real V1 income records are carried forward.', 'capture', 'Add income')}</div></section>
+        <section class="section"><div class="section-head"><h2>Bill Radar Queue</h2><span>${f.bills.filter(item => item.status !== 'paid').length} active</span></div><div class="glass list-panel">${f.bills.length ? f.bills.map(item => `<div class="data-row" style="--system:${item.status === 'paid' ? '#5ef2a5' : '#ffc857'}" data-route="money/${item.id}" role="button" tabindex="0"><span class="row-icon">${item.status === 'paid' ? '✓' : '◇'}</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${escapeHtml(item.category)} · ${dayLabel(item.dueDate)}</span></span><span class="row-meta"><strong>${money(item.amount)}</strong>${ownerChip(item.ownerId)}</span></div>`).join('') : emptyState('Bill Radar is clear', 'V1 had no bill records to migrate.', 'capture', 'Add a bill')}</div></section>
       </div>
       <aside class="module-sticky">
         <button class="glass interactive-card suitcase-stage" data-route="money/${f.boss.id}" aria-label="Open Money Suitcase"><div class="suitcase" style="--fill:${fill}%"><i class="suitcase-fill"></i><i class="suitcase-grid"></i></div></button>
@@ -181,7 +188,7 @@ function moneyView() {
       </aside>
     </div>
     <section class="section glass wide-card interactive-card" data-route="money/weekly" role="button" tabindex="0"><span class="card-label">Weekly Income Signal <i class="arrow">›</i></span>${bars(f.weekly, 'money')}</section>
-    <section class="section glass wide-card"><div class="section-head"><h2>Reserved Funds</h2><span>${money(f.reserved)} allocated</span></div>${f.allocations.map(item => `<div class="allocation" data-route="money/${item.id}" role="button" tabindex="0"><div class="allocation-line"><span>${escapeHtml(item.label)} · ${ownerChip(item.ownerId)}</span><strong>${money(item.amount)} / ${money(item.target)}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${percent(item.amount,item.target)}%;background:${item.color}"></div></div></div>`).join('')}</section>
+    <section class="section glass wide-card"><div class="section-head"><h2>Reserved Funds</h2><span>${money(f.reserved)} allocated</span></div>${f.allocations.length ? f.allocations.map(item => `<div class="allocation" data-route="money/${item.id}" role="button" tabindex="0"><div class="allocation-line"><span>${escapeHtml(item.label)} · ${ownerChip(item.ownerId)}</span><strong>${money(item.amount)} / ${money(item.target)}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${percent(item.amount,item.target)}%;background:${item.color}"></div></div></div>`).join('') : emptyState('No reserved-fund allocations', 'Create allocations when the full money plan is ready.', 'capture', 'Quick Add')}</section>
   </main>`;
 }
 
@@ -191,25 +198,26 @@ function statTile(label, value, note, route) {
 
 function missionsView() {
   const completed = state.missions.filter(item => item.completed).length;
-  const perfect = completed === state.missions.length;
+  const perfect = state.missions.length > 0 && completed === state.missions.length;
   return `<main class="view" style="--system:${system('missions').accent}">
     ${moduleHeader('missions', 'Mission Control', 'Daily operations, category levels, streak rewards and goal boss battles.', `${completed}/${state.missions.length}`, perfect ? 'Perfect Day unlocked' : 'daily missions complete')}
     <section class="section glass wide-card boss-card interactive-card" style="--system:${system('missions').accent}" data-route="missions/perfect-day" role="button" tabindex="0"><span class="card-label">Perfect Day Protocol <i class="arrow">›</i></span><h2>${perfect ? 'Reward unlocked: +250 XP' : `${state.missions.length - completed} missions remain`}</h2><div class="boss-health"><i style="width:${percent(completed,state.missions.length)}%"></i></div><div class="metric-note">Chain every daily system to earn the household multiplier.</div></section>
-    <section class="section"><div class="section-head"><h2>Today’s Mission Board</h2><button class="section-link" data-route="capture">Create mission</button></div><div class="glass list-panel">${state.missions.map(missionRow).join('')}</div></section>
+    <section class="section"><div class="section-head"><h2>Today’s Mission Board</h2><button class="section-link" data-route="capture">Create mission</button></div><div class="glass list-panel">${state.missions.length ? state.missions.map(missionRow).join('') : emptyState('No missions yet', 'Create the first shared or member-owned mission.')}</div></section>
     <section class="section"><div class="section-head"><h2>Category Levels</h2><span>Shared progression</span></div><div class="stats-grid">${Object.entries(state.game.categoryLevels).map(([key,value]) => statTile(system(key).label, `Lv ${value}`, 'Open skill track', `missions/category-${key}`)).join('')}</div></section>
-    <section class="section"><div class="section-head"><h2>Achievements</h2><span>${state.game.achievements.filter(item=>item.earned).length}/${state.game.achievements.length} earned</span></div><div class="glass list-panel">${state.game.achievements.map(item => `<button class="data-row" style="--system:${item.earned ? '#ffc857' : '#927cff'}" data-route="missions/${item.id}"><span class="row-icon">${item.icon}</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${escapeHtml(item.detail)}</span></span><span class="row-meta"><strong>${item.earned ? 'Earned' : `${item.progress || 0}%`}</strong><span>›</span></span></button>`).join('')}</div></section>
+    <section class="section"><div class="section-head"><h2>Achievements</h2><span>${state.game.achievements.filter(item=>item.earned).length}/${state.game.achievements.length} earned</span></div><div class="glass list-panel">${state.game.achievements.length ? state.game.achievements.map(item => `<button class="data-row" style="--system:${item.earned ? '#ffc857' : '#927cff'}" data-route="missions/${item.id}"><span class="row-icon">${item.icon}</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${escapeHtml(item.detail)}</span></span><span class="row-meta"><strong>${item.earned ? 'Earned' : `${item.progress || 0}%`}</strong><span>›</span></span></button>`).join('') : emptyState('No achievements imported', 'New achievements begin with V2 activity.', 'missions', 'Open mission board')}</div></section>
   </main>`;
 }
 
 function streamingView() {
   const s = state.streaming;
+  const nextStream = s.schedule[0];
   return `<main class="view" style="--system:${system('streaming').accent}">
     ${moduleHeader('streaming', 'Creator Operations', 'Turn setup, consistency and content output into a visible growth system.', `${s.consistency}%`, 'streaming consistency signal')}
-    <div class="stats-grid section">${statTile('Setup', `${s.setupProgress}%`, 'Broadcast readiness', 'streaming/setup')}${statTile('Sessions', s.sessionsThisMonth, 'This month', 'streaming/sessions')}${statTile('Growth', `${s.revenueMilestone}%`, 'Monetization path', 'streaming/growth')}${statTile('Next stream', s.schedule[0].day, s.schedule[0].time, `streaming/${s.schedule[0].id}`)}</div>
+    <div class="stats-grid section">${statTile('Setup', `${s.setupProgress}%`, 'Broadcast readiness', 'streaming/setup')}${statTile('Sessions', s.sessionsThisMonth, 'This month', 'streaming/sessions')}${statTile('Growth', `${s.revenueMilestone}%`, 'Monetization path', 'streaming/growth')}${statTile('Next stream', nextStream?.day || 'None', nextStream?.time || 'Not scheduled', nextStream ? `streaming/${nextStream.id}` : 'capture')}</div>
     <div class="module-grid section"><div>
-      <section><div class="section-head"><h2>Schedule</h2><button class="section-link" data-route="capture">Add session</button></div><div class="glass list-panel">${s.schedule.map(item => `<button class="data-row" style="--system:${system('streaming').accent}" data-route="streaming/${item.id}"><span class="row-icon">◉</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${item.day} · ${item.time}</span></span><span class="row-meta">${ownerChip(item.ownerId)}<span>›</span></span></button>`).join('')}</div></section>
-      <section class="section"><div class="section-head"><h2>Content Pipeline</h2><span>${s.pipeline.length} active</span></div><div class="glass list-panel">${s.pipeline.map(item => `<button class="data-row" style="--system:${system('streaming').accent}" data-route="streaming/${item.id}"><span class="row-icon">${item.stage.slice(0,1)}</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">Stage: ${escapeHtml(item.stage)}</span></span><span class="row-meta">${ownerChip(item.ownerId)}<span>›</span></span></button>`).join('')}</div></section>
-    </div><aside class="glass skill-tree module-sticky">${s.skills.map((item,index) => `<button class="skill-node ${item.unlocked ? '' : 'locked'}" style="--system:${system('streaming').accent};--x:${[50,22,78,34,70][index]}%;--y:${[18,48,48,78,78][index]}%" data-route="streaming/${item.id}"><strong>${escapeHtml(item.title)}</strong><span>Level ${item.level}</span></button>`).join('')}</aside></div>
+      <section><div class="section-head"><h2>Schedule</h2><button class="section-link" data-route="capture">Add session</button></div><div class="glass list-panel">${s.schedule.length ? s.schedule.map(item => `<button class="data-row" style="--system:${system('streaming').accent}" data-route="streaming/${item.id}"><span class="row-icon">◉</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${item.day} · ${item.time}</span></span><span class="row-meta">${ownerChip(item.ownerId)}<span>›</span></span></button>`).join('') : emptyState('No streaming schedule', 'V1 had no session records to migrate.', 'capture', 'Add a session')}</div></section>
+      <section class="section"><div class="section-head"><h2>Content Pipeline</h2><span>${s.pipeline.length} active</span></div><div class="glass list-panel">${s.pipeline.length ? s.pipeline.map(item => `<button class="data-row" style="--system:${system('streaming').accent}" data-route="streaming/${item.id}"><span class="row-icon">${item.stage.slice(0,1)}</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">Stage: ${escapeHtml(item.stage)}</span></span><span class="row-meta">${ownerChip(item.ownerId)}<span>›</span></span></button>`).join('') : emptyState('Content pipeline is empty', 'New V2 content will appear here.', 'capture', 'Capture content')}</div></section>
+    </div><aside class="glass skill-tree module-sticky">${s.skills.length ? s.skills.map((item,index) => `<button class="skill-node ${item.unlocked ? '' : 'locked'}" style="--system:${system('streaming').accent};--x:${[50,22,78,34,70][index]}%;--y:${[18,48,48,78,78][index]}%" data-route="streaming/${item.id}"><strong>${escapeHtml(item.title)}</strong><span>Level ${item.level}</span></button>`).join('') : emptyState('No streaming skills yet', 'The visual skill tree starts clean after migration.', 'streaming/setup', 'Open setup')}</aside></div>
   </main>`;
 }
 
@@ -221,7 +229,7 @@ function bodyView() {
       ${macroRing(b.calories,b.calorieTarget,'Calories','#ff9d5c')}${macroRing(b.protein,b.proteinTarget,'Protein','#ff6fcf')}${macroRing(b.water,b.waterTarget,'Water','#63e6ff')}${macroRing(b.muscleProgress,100,'Muscle','#5ef2a5')}
     </div></section>
     <div class="stats-grid section">${statTile('Calories', `${b.calories}`, `${b.calorieTarget} target`, 'body/calories')}${statTile('Protein', `${b.protein}g`, `${b.proteinTarget}g target`, 'body/protein')}${statTile('Water', `${b.water}/${b.waterTarget}`, 'Cups today', 'body/water')}${statTile('Build phase', `${b.muscleProgress}%`, 'Muscle trajectory', 'body/muscle')}</div>
-    <section class="section"><div class="section-head"><h2>Workout Tracker</h2><button class="section-link" data-route="capture">Log workout</button></div><div class="glass list-panel">${b.workouts.map(item => `<div class="data-row ${item.completed ? 'is-complete' : ''}" style="--system:${system('body').accent}" data-route="body/${item.id}" role="button" tabindex="0"><button class="mission-check" data-action="toggle-workout" data-id="${item.id}" aria-label="Toggle workout">✓</button><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${dayLabel(item.date)} · ${item.duration} min</span></span><span class="row-meta">${ownerChip(item.ownerId)}<span>›</span></span></div>`).join('')}</div></section>
+    <section class="section"><div class="section-head"><h2>Workout Tracker</h2><button class="section-link" data-route="capture">Log workout</button></div><div class="glass list-panel">${b.workouts.length ? b.workouts.map(item => `<div class="data-row ${item.completed ? 'is-complete' : ''}" style="--system:${system('body').accent}" data-route="body/${item.id}" role="button" tabindex="0"><button class="mission-check" data-action="toggle-workout" data-id="${item.id}" aria-label="Toggle workout">✓</button><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${dayLabel(item.date)} · ${item.duration} min</span></span><span class="row-meta">${ownerChip(item.ownerId)}<span>›</span></span></div>`).join('') : emptyState('No workouts recorded', 'V1 had no workout history to migrate.', 'capture', 'Log a workout')}</div></section>
   </main>`;
 }
 
@@ -231,25 +239,28 @@ function macroRing(value, target, label, color) {
 
 function learningView() {
   const l = state.learning;
+  const remaining = Math.max(0, l.weeklyTarget - l.weeklyMinutes);
   return `<main class="view" style="--system:${system('learning').accent}">
-    ${moduleHeader('learning', 'AI Skill Matrix', 'Build individual mastery while advancing shared household capability.', `${l.weeklyMinutes} min`, `${l.weeklyTarget - l.weeklyMinutes} minutes to weekly mission`)}
-    <section class="section glass skill-tree">${l.skills.map(item => `<button class="skill-node" style="--system:${system('learning').accent};--x:${item.x}%;--y:${item.y}%" data-route="learning/${item.id}"><strong>${escapeHtml(item.title)}</strong><span>Lv ${item.level} · ${item.xp} XP</span></button>`).join('')}</section>
-    <section class="section glass wide-card interactive-card" data-route="learning/milestone" role="button" tabindex="0"><span class="card-label">Active Milestone <i class="arrow">›</i></span><h2>${escapeHtml(l.milestone)}</h2>${progress(l.weeklyMinutes,l.weeklyTarget)}<div class="metric-note">Weekly learning charge: ${percent(l.weeklyMinutes,l.weeklyTarget).toFixed(0)}%</div></section>
-    <section class="section"><div class="section-head"><h2>Notes & Resources</h2><button class="section-link" data-route="capture">Add resource</button></div><div class="glass list-panel">${l.resources.map(item => `<button class="data-row" style="--system:${system('learning').accent}" data-route="learning/${item.id}"><span class="row-icon">⌁</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${escapeHtml(item.type)}</span></span><span class="row-meta">${ownerChip(item.ownerId)}<span>›</span></span></button>`).join('')}</div></section>
+    ${moduleHeader('learning', 'AI Skill Matrix', 'Build individual mastery while advancing shared household capability.', `${l.weeklyMinutes} min`, l.weeklyTarget ? `${remaining} minutes to weekly mission` : 'No learning target set yet')}
+    <section class="section glass skill-tree">${l.skills.length ? l.skills.map(item => `<button class="skill-node" style="--system:${system('learning').accent};--x:${item.x}%;--y:${item.y}%" data-route="learning/${item.id}"><strong>${escapeHtml(item.title)}</strong><span>Lv ${item.level} · ${item.xp} XP</span></button>`).join('') : emptyState('No AI skills yet', 'The migrated skill tree contains no demo nodes.', 'capture', 'Capture a learning goal')}</section>
+    ${l.milestone ? `<section class="section glass wide-card interactive-card" data-route="learning/milestone" role="button" tabindex="0"><span class="card-label">Active Milestone <i class="arrow">›</i></span><h2>${escapeHtml(l.milestone)}</h2>${progress(l.weeklyMinutes,l.weeklyTarget)}<div class="metric-note">Weekly learning charge: ${percent(l.weeklyMinutes,l.weeklyTarget).toFixed(0)}%</div></section>` : `<section class="section glass wide-card">${emptyState('No active learning milestone', 'Choose a real V2 goal when you are ready.', 'capture', 'Capture a milestone')}</section>`}
+    <section class="section"><div class="section-head"><h2>Notes & Resources</h2><button class="section-link" data-route="capture">Add resource</button></div><div class="glass list-panel">${l.resources.length ? l.resources.map(item => `<button class="data-row" style="--system:${system('learning').accent}" data-route="learning/${item.id}"><span class="row-icon">⌁</span><span><span class="row-title">${escapeHtml(item.title)}</span><span class="row-detail">${escapeHtml(item.type)}</span></span><span class="row-meta">${ownerChip(item.ownerId)}<span>›</span></span></button>`).join('') : emptyState('No notes or resources', 'V1 had no learning library to migrate.', 'capture', 'Add a resource')}</div></section>
   </main>`;
 }
 
 function analyticsView() {
   const a = state.analytics;
+  const latestScore = a.dailyScores.at(-1);
+  const summaries = [
+    ['Biggest Win', a.summaries.win, '#5ef2a5', 'analytics/biggest-win'],
+    ['Biggest Miss', a.summaries.miss, '#ff5d7d', 'analytics/biggest-miss'],
+    ['Next Priority', a.summaries.priority, '#ffc857', 'analytics/next-priority']
+  ].filter(([, value]) => value);
   return `<main class="view" style="--system:${system('analytics').accent}">
-    ${moduleHeader('analytics', 'Signal Observatory', 'A shared timeline, weekly scoreboard and automated reflection layer.', `${a.dailyScores.at(-1)}%`, 'today’s household score')}
+    ${moduleHeader('analytics', 'Signal Observatory', 'A shared timeline, weekly scoreboard and automated reflection layer.', latestScore == null ? 'No score' : `${latestScore}%`, latestScore == null ? 'Analytics starts with real V2 activity' : 'today’s household score')}
     <section class="section glass wide-card interactive-card" data-route="analytics/scoreboard" role="button" tabindex="0"><span class="card-label">Weekly Scoreboard <i class="arrow">›</i></span>${bars(a.dailyScores,'analytics')}</section>
-    <section class="section summary-grid">
-      <button class="glass interactive-card summary-card" style="--summary:#5ef2a5" data-route="analytics/biggest-win"><strong>Biggest Win</strong><p>${escapeHtml(a.summaries.win)}</p></button>
-      <button class="glass interactive-card summary-card" style="--summary:#ff5d7d" data-route="analytics/biggest-miss"><strong>Biggest Miss</strong><p>${escapeHtml(a.summaries.miss)}</p></button>
-      <button class="glass interactive-card summary-card" style="--summary:#ffc857" data-route="analytics/next-priority"><strong>Next Priority</strong><p>${escapeHtml(a.summaries.priority)}</p></button>
-    </section>
-    <section class="section"><div class="section-head"><h2>Daily Activity Timeline</h2><span>${state.activity.length} recorded signals</span></div><div class="glass list-panel">${state.activity.map(activityRow).join('')}</div></section>
+    <section class="section summary-grid">${summaries.length ? summaries.map(([label,value,color,route]) => `<button class="glass interactive-card summary-card" style="--summary:${color}" data-route="${route}"><strong>${label}</strong><p>${escapeHtml(value)}</p></button>`).join('') : `<div class="glass summary-empty">${emptyState('No automated summary yet', 'Wins, misses and priorities will be generated from real history.', 'capture', 'Add activity')}</div>`}</section>
+    <section class="section"><div class="section-head"><h2>Daily Activity Timeline</h2><span>${state.activity.length} recorded signals</span></div><div class="glass list-panel">${state.activity.length ? state.activity.map(activityRow).join('') : emptyState('No timeline history', 'Migrated users begin without fabricated analytics.', 'capture', 'Record first activity')}</div></section>
   </main>`;
 }
 
@@ -306,7 +317,7 @@ function detailSheet(base, id) {
   if (item?.duration) details.push(['Duration', `${item.duration} minutes`]);
   if (item?.detail) details.push(['Signal', item.detail]);
   if (item?.ownerId) details.push(['Ownership', owner(item.ownerId).label]);
-  if (!details.length) details.push(['System status', 'Operational starter view'], ['Purpose', 'This drill-down is wired for the full module engine.']);
+  if (!details.length) details.push(['System status', 'No records yet'], ['Purpose', 'This drill-down is ready for real household data.']);
   let action = '';
   if (base === 'money' && item?.dueDate) action = `<button class="primary-button" data-action="toggle-bill" data-id="${item.id}">${item.status === 'paid' ? 'Mark unpaid' : 'Mark paid'}</button>`;
   if (base === 'missions' && item?.xp != null && 'completed' in item) action = `<button class="primary-button" data-action="toggle-mission" data-id="${item.id}">${item.completed ? 'Reopen mission' : `Complete +${item.xp} XP`}</button>`;
@@ -356,8 +367,7 @@ function toggleMission(id) {
     if (!mission) return;
     mission.completed = !mission.completed;
     const delta = mission.completed ? mission.xp : -mission.xp;
-    next.game.xp = Math.max(0, next.game.xp + delta);
-    while (next.game.xp >= next.game.xpToNext) { next.game.xp -= next.game.xpToNext; next.game.level += 1; }
+    next.game = applyXpDelta(next.game, delta);
     next.activity.unshift({ id: uid('activity'), title: `${mission.completed ? 'Completed' : 'Reopened'} ${mission.title}`, detail: `${delta > 0 ? '+' : ''}${delta} XP`, system: mission.category, ownerId: mission.ownerId, occurredAt: new Date().toISOString() });
     result = mission.completed;
   });
@@ -372,23 +382,26 @@ function submitCapture(form) {
   const amount = Math.max(0, Number(data.get('amount')) || 0);
   if (!title) return;
   store.update(next => {
-    const now = new Date().toISOString();
+    const nowDate = new Date();
+    const now = nowDate.toISOString();
+    const localDay = toLocalDateKey(nowDate);
     next.captures.unshift({ id: uid('capture'), type: captureType, title, detail, amount, ownerId, createdAt: now });
     let systemKey = 'missions';
     let activityDetail = detail || captureType;
     if (captureType === 'income') {
-      const entry = { id: uid('income'), source: title, amount, date: now.slice(0,10), ownerId };
+      const entry = { id: uid('income'), source: title, amount, date: localDay, ownerId };
       next.finance.income.push(entry); next.finance.monthIncome += amount; next.finance.available += amount; next.finance.boss.current = next.finance.monthIncome; systemKey = 'money'; activityDetail = `+${money(amount)}`;
     } else if (captureType === 'expense') {
       next.finance.spent += amount; next.finance.available = Math.max(0, next.finance.available - amount); systemKey = 'money'; activityDetail = `-${money(amount)}`;
     } else if (captureType === 'bill') {
-      next.finance.bills.push({ id: uid('bill'), title, amount, dueDate: new Date(Date.now()+7*86400000).toISOString().slice(0,10), status: 'upcoming', ownerId, category: detail || 'Other' }); systemKey = 'money'; activityDetail = `${money(amount)} due in 7 days`;
+      const dueDate = new Date(nowDate); dueDate.setDate(dueDate.getDate() + 7);
+      next.finance.bills.push({ id: uid('bill'), title, amount, dueDate: toLocalDateKey(dueDate), status: 'upcoming', ownerId, category: detail || 'Other' }); systemKey = 'money'; activityDetail = `${money(amount)} due in 7 days`;
     } else if (captureType === 'mission') {
       next.missions.push({ id: uid('mission'), title, detail: detail || 'Custom household mission', category: 'household', xp: 75, completed: false, recurring: 'once', ownerId });
     } else if (captureType === 'event') {
       next.calendar.push({ id: uid('event'), title, startsAt: new Date(Date.now()+3600000).toISOString(), system: 'missions', ownerId });
     } else if (captureType === 'workout') {
-      next.body.workouts.unshift({ id: uid('workout'), title, date: now.slice(0,10), duration: 30, completed: true, ownerId }); systemKey = 'body'; activityDetail = detail || '30 minute session';
+      next.body.workouts.unshift({ id: uid('workout'), title, date: localDay, duration: 30, completed: true, ownerId }); systemKey = 'body'; activityDetail = detail || '30 minute session';
     } else if (captureType === 'stream') systemKey = 'streaming';
     else if (captureType === 'meal') systemKey = 'body';
     next.activity.unshift({ id: uid('activity'), title: `Captured ${title}`, detail: activityDetail, system: systemKey, ownerId, occurredAt: now });
@@ -483,8 +496,21 @@ async function registerServiceWorker() {
   try {
     const hadController = Boolean(navigator.serviceWorker.controller);
     const registration = await navigator.serviceWorker.register('./sw.js');
-    if (registration.waiting) toast('A new visual engine update is ready. Reload to activate it.');
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !refreshing) { refreshing=true; location.reload(); } });
+
+    const activateUpdate = worker => {
+      if (!hadController || !worker) return;
+      toast('Update ready. Activating now — the app will reload automatically.');
+      worker.postMessage({ type: 'SKIP_WAITING' });
+    };
+
+    if (registration.waiting) activateUpdate(registration.waiting);
+    registration.addEventListener('updatefound', () => {
+      const worker = registration.installing;
+      worker?.addEventListener('statechange', () => {
+        if (worker.state === 'installed') activateUpdate(worker);
+      });
+    });
   } catch (error) { console.warn('Offline mode unavailable', error); }
 }
 

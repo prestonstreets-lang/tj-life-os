@@ -1,3 +1,5 @@
+import { toLocalDateKey } from './date.js';
+
 export const SCHEMA_VERSION = 2;
 
 export const SYSTEMS = {
@@ -12,7 +14,7 @@ export const SYSTEMS = {
 const isoDay = (offset = 0) => {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10);
+  return toLocalDateKey(d);
 };
 
 const atTime = (hours, minutes = 0, offset = 0) => {

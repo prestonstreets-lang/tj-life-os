@@ -153,6 +153,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .owner-chip::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--owner); box-shadow: 0 0 8px var(--owner); }
 
 .list-panel { padding: 4px 15px; }
+.empty-state { min-height: 156px; padding: 24px 18px; display: grid; place-items: center; align-content: center; gap: 7px; text-align: center; }
+.empty-state > span { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 14px; color: var(--cyan); background: rgba(99,230,255,.06); }
+.empty-state > strong { font-family: var(--font-display); }
+.empty-state > p { max-width: 410px; margin: 0 0 5px; color: var(--muted); font-size: 11px; }
+.empty-state .secondary-button { min-height: 42px; }
 .data-row { width: 100%; min-height: 68px; padding: 12px 2px; border: 0; border-bottom: 1px solid var(--line); background: none; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 11px; text-align: left; cursor: pointer; }
 .data-row:last-child { border-bottom: 0; }
 .data-row:hover .row-title { color: var(--cyan); }
@@ -193,6 +198,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .suitcase-grid { position: absolute; inset: 0; z-index: 2; background-image: linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px); background-size: 26px 26px; }
 
 .chart { display: flex; align-items: end; gap: 7px; height: 150px; padding-top: 18px; }
+.chart-empty { min-height: 150px; display: grid; place-items: center; color: var(--muted); font-size: 12px; text-align: center; }
 .bar-col { flex: 1; height: var(--h); min-width: 12px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, var(--system, var(--cyan)), color-mix(in srgb, var(--system, var(--cyan)), transparent 72%)); box-shadow: 0 0 18px color-mix(in srgb, var(--system, var(--cyan)), transparent 76%); position: relative; transform-origin: bottom; animation: barRise .55s ease both; }
 .bar-col span { position: absolute; inset: auto 0 -20px; text-align: center; color: var(--muted-2); font-size: 9px; }
 .allocation { margin-top: 14px; }
@@ -219,6 +225,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .macro-grid { display: grid; grid-template-columns: repeat(2, 1fr); justify-items: center; gap: 18px; }
 
 .summary-grid { display: grid; gap: 10px; }
+.summary-empty { grid-column: 1 / -1; }
 .summary-card { padding: 17px; border-left: 3px solid var(--summary); }
 .summary-card strong { display: block; color: var(--summary); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
 .summary-card p { margin: 8px 0 0; color: var(--muted); }

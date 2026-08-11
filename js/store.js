@@ -1,4 +1,5 @@
 import { createDefaultState, SCHEMA_VERSION, uid } from './data.js';
+import { migrateLegacyState } from './migration.js';
 
 const V2_KEY = 'ourLifeOS:v2';
 const LEGACY_KEY = 'tjLifeOS';
@@ -27,36 +28,8 @@ function safeWrite(key, value) {
   }
 }
 
-function legacyDate(value) {
-  const parsed = value ? new Date(value) : new Date();
-  return Number.isNaN(parsed.getTime()) ? new Date().toISOString().slice(0, 10) : parsed.toISOString().slice(0, 10);
-}
-
 function migrateLegacy(legacy) {
-  const next = createDefaultState();
-  const completed = Array.isArray(legacy.missions) ? legacy.missions : [];
-  next.game.level = Math.max(1, Number(legacy.level) || next.game.level);
-  next.game.xp = Math.max(0, Number(legacy.xp) || 0);
-  next.game.streak = Math.max(0, Number(legacy.streak) || 0);
-  next.finance.monthGoal = Math.max(1, Number(legacy.goal) || next.finance.monthGoal);
-  next.finance.monthIncome = Math.max(0, Number(legacy.money) || 0);
-  next.finance.available = next.finance.monthIncome;
-  next.finance.boss.current = next.finance.monthIncome;
-  next.finance.boss.target = next.finance.monthGoal;
-  next.missions = next.missions.map((mission, index) => ({ ...mission, completed: Boolean(completed[index]) }));
-  if (Array.isArray(legacy.incomes)) {
-    next.finance.income = legacy.incomes.map(item => ({
-      id: uid('income'), source: String(item.source || 'Other'), amount: Math.max(0, Number(item.amount) || 0),
-      date: legacyDate(item.date), ownerId: 'household'
-    }));
-  }
-  if (Array.isArray(legacy.captures)) {
-    next.captures = legacy.captures.map(text => ({
-      id: uid('capture'), type: 'note', title: String(text), createdAt: new Date().toISOString(), ownerId: 'household'
-    }));
-  }
-  next.meta.migratedFrom = LEGACY_KEY;
-  next.meta.migratedAt = new Date().toISOString();
+  const next = migrateLegacyState(legacy);
   migrationNotice = 'V1 data was safely copied into V2. Your original V1 state remains untouched.';
   return next;
 }

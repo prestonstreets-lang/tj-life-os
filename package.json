@@ -1,0 +1,8 @@
+{
+  "name": "our-life-os-v2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run-tests.mjs"
+  }
+}
