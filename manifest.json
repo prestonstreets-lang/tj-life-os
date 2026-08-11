@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Our Life OS",
   "short_name": "Life OS",
-  "description": "A shared household command center for money, missions, vision, career, health, learning and growth.",
+  "description": "A shared household command center for money, missions, vision, career, fitness, self mastery and growth.",
   "start_url": "./#home",
   "scope": "./",
   "display": "standalone",

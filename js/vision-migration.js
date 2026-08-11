@@ -5,7 +5,7 @@ const object = value => value && typeof value === 'object' && !Array.isArray(val
 
 export function upgradeVisionState(value) {
   const state = value && typeof value === 'object' ? JSON.parse(JSON.stringify(value)) : {};
-  state.schemaVersion = VISION_SCHEMA_VERSION;
+  state.schemaVersion = Math.max(Number(state.schemaVersion)||0,VISION_SCHEMA_VERSION);
   state.visionBoards = list(state.visionBoards);
   state.visionItems = list(state.visionItems);
   state.visionMedia = list(state.visionMedia);
