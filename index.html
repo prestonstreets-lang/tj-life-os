@@ -3,107 +3,37 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0f14" />
-  <title>TJ Life OS</title>
-  <link rel="manifest" href="manifest.json" />
-  <style>
-    :root{--bg:#0b0f14;--panel:#121821;--panel2:#171f2a;--text:#f4f7fb;--muted:#95a3b6;--line:#283241;--accent:#7c9cff;--good:#68d391;--warn:#f6c85f;--danger:#ff7b7b}
-    *{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#090d12,#0e141d 55%,#0b0f14);color:var(--text)}
-    button,input,select{font:inherit} button{cursor:pointer}.app{max-width:1180px;margin:auto;padding:20px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:18px}.title h1{margin:0;font-size:clamp(24px,4vw,42px)}.title p{margin:6px 0 0;color:var(--muted)}
-    .btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:12px;padding:10px 14px}.btn.primary{background:var(--accent);color:#09111f;border-color:transparent;font-weight:700}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:rgba(18,24,33,.92);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 35px rgba(0,0,0,.18)}.metric small,.muted{color:var(--muted)}.metric strong{display:block;font-size:30px;margin-top:5px}.bar{height:10px;background:#222c3a;border-radius:999px;overflow:hidden}.fill{height:100%;background:linear-gradient(90deg,var(--accent),#a7b8ff);border-radius:999px}.section{margin-top:16px}.section h2{font-size:18px;margin:0 0 10px}.mission{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.mission:last-child{border-bottom:0}.mission input{width:20px;height:20px}.xp{font-size:12px;background:#202b3b;color:#cbd5ff;padding:5px 8px;border-radius:999px}.system{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}.system-head{display:flex;justify-content:space-between;gap:10px}.system p{margin:8px 0;color:var(--muted);font-size:14px}.money-wrap{display:grid;grid-template-columns:1.4fr .6fr;gap:18px;align-items:center}.form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px}.field{background:#0d131c;border:1px solid var(--line);color:var(--text);padding:11px 12px;border-radius:12px;width:100%}.suitcase{height:180px;border:2px solid var(--line);border-radius:22px;display:flex;align-items:flex-end;overflow:hidden;background:#0d131c;position:relative}.suitcase:before{content:"MONEY SUITCASE";position:absolute;inset:12px auto auto 12px;font-size:11px;color:var(--muted);letter-spacing:.08em}.casefill{width:100%;background:linear-gradient(180deg,#9fb2ff,#6688ff);transition:.25s}.capture{display:flex;gap:10px}.list{margin-top:10px}.item{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.nav{display:flex;gap:8px;flex-wrap:wrap}.tab{border:1px solid var(--line);background:transparent;color:var(--muted);padding:8px 12px;border-radius:999px}.tab.active{background:var(--accent);color:#09111f;border-color:transparent}.panel{display:none}.panel.active{display:block}.kpi-note{font-size:13px;color:var(--muted);margin-top:8px}.footer{color:var(--muted);font-size:12px;text-align:center;padding:26px 0 10px}.danger{color:var(--danger)}
-    @media(max-width:800px){.grid4,.grid2{grid-template-columns:1fr 1fr}.money-wrap{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.app{padding:14px}}
-    @media(max-width:520px){.grid4,.grid2{grid-template-columns:1fr}.capture{flex-direction:column}.metric strong{font-size:26px}}
-  </style>
+  <meta name="theme-color" content="#080d1c" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="Our Life OS — a shared household command center for money, missions, health, learning and growth." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Our Life OS" />
+  <title>Our Life OS</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon-180.png" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
-<body>
-<div class="app">
-  <header class="top">
-    <div class="title"><h1>TJ Life OS</h1><p>Money. Body. Streaming. Skills. One command center.</p></div>
-    <div class="nav">
-      <button class="tab active" data-tab="dashboard">Dashboard</button>
-      <button class="tab" data-tab="settings">Settings</button>
-      <button id="resetBtn" class="btn">Reset Today</button>
-    </div>
-  </header>
+<body data-effects="balanced">
+  <div class="ambient" aria-hidden="true">
+    <span class="aurora aurora-a"></span>
+    <span class="aurora aurora-b"></span>
+    <span class="grid-plane"></span>
+    <span class="noise"></span>
+  </div>
 
-  <main>
-    <section id="dashboard" class="panel active">
-      <div class="grid4">
-        <div class="card metric"><small>Life Level</small><strong id="levelText">12</strong><div class="bar"><div id="xpBar" class="fill"></div></div><div id="xpText" class="kpi-note"></div></div>
-        <div class="card metric"><small>Daily Missions</small><strong id="missionText">0 / 5</strong><div class="kpi-note">Completed today</div></div>
-        <div class="card metric"><small>Money Progress</small><strong id="moneyText">$0</strong><div class="kpi-note">Tracked this month</div></div>
-        <div class="card metric"><small>Momentum</small><strong id="streakText">0 days</strong><div class="kpi-note">Manual streak counter</div></div>
-      </div>
+  <div id="bootSplash" class="boot-splash" aria-label="Launching Our Life OS">
+    <img src="./assets/icon.svg" alt="" width="112" height="112" />
+    <div class="boot-wordmark"><strong>OUR LIFE OS</strong><span>Household command center</span></div>
+    <div class="boot-rail"><i></i></div>
+  </div>
 
-      <div class="section card"><h2>Today’s Mission Board</h2><div id="missions"></div></div>
+  <div id="app" class="app-shell" aria-live="polite">
+    <noscript>Our Life OS requires JavaScript to run.</noscript>
+  </div>
 
-      <div class="section"><h2>Core Systems</h2><div id="systems" class="grid2"></div></div>
-
-      <div class="section card"><h2>Financial Mission</h2>
-        <div class="money-wrap">
-          <div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>End-of-month target</span><span id="moneyPct"></span></div>
-            <div class="bar"><div id="moneyBar" class="fill"></div></div>
-            <div class="form-row" style="margin-top:14px">
-              <input id="incomeInput" class="field" type="number" min="0" step="0.01" placeholder="Add earnings" />
-              <select id="incomeSource" class="field"><option>Uber</option><option>Paycheck</option><option>Streaming</option><option>Other</option></select>
-              <button id="addIncomeBtn" class="btn primary">Add</button>
-            </div>
-            <div id="incomeList" class="list"></div>
-          </div>
-          <div><div class="suitcase"><div id="caseFill" class="casefill"></div></div><div class="kpi-note" style="text-align:center">Fill the suitcase to clear the monthly boss.</div></div>
-        </div>
-      </div>
-
-      <div class="section card"><h2>Quick Capture</h2><div class="capture"><input id="captureInput" class="field" placeholder="Task, idea, purchase, reminder..."/><button id="captureBtn" class="btn">Capture</button></div><div id="captureList" class="list"></div></div>
-    </section>
-
-    <section id="settings" class="panel">
-      <div class="card"><h2>Life OS Settings</h2>
-        <div class="grid2">
-          <label>Monthly money goal<input id="goalInput" class="field" type="number" min="1" step="1"></label>
-          <label>Current streak<input id="streakInput" class="field" type="number" min="0" step="1"></label>
-          <label>Starting XP<input id="xpInput" class="field" type="number" min="0" step="1"></label>
-          <label>Life level<input id="levelInput" class="field" type="number" min="1" step="1"></label>
-        </div>
-        <button id="saveSettingsBtn" class="btn primary" style="margin-top:14px">Save Settings</button>
-        <p class="muted">All data is saved on this device in your browser. No account is required.</p>
-      </div>
-    </section>
-  </main>
-  <div class="footer">TJ Life OS • Local-first personal dashboard</div>
-</div>
-<script>
-const defaults={goal:4000,money:2140,xp:680,level:12,streak:7,missions:[false,false,false,false,false],incomes:[],captures:[],systems:[
-{name:'Money & Financial Roadmap',pct:62,focus:'Bills • Cushion • Income'},
-{name:'Streaming Business',pct:54,focus:'Streamlabs • Audio • Consistency'},
-{name:'Body & Nutrition',pct:47,focus:'Muscle • Training • Macros'},
-{name:'Learning & AI Skills',pct:69,focus:'Visuals • Systems • Build'}]};
-const missionData=[['Protect the money plan','Check today’s cash, next bill and earning target',150],['Build the body','Complete training / nutrition target',100],['Creator mission','Stream, configure, edit or publish',125],['Skill upgrade','Complete one focused AI / technical learning block',75],['Reset the station','10-minute desk, files or setup reset',50]];
-let state=JSON.parse(localStorage.getItem('tjLifeOS')||'null')||structuredClone(defaults);
-function save(){localStorage.setItem('tjLifeOS',JSON.stringify(state));render();}
-function moneyPct(){return Math.max(0,Math.min(100,state.money/state.goal*100));}
-function render(){
- document.getElementById('levelText').textContent=state.level;
- document.getElementById('xpText').textContent=`${state.xp} / 1,000 XP`;
- document.getElementById('xpBar').style.width=Math.min(100,state.xp/10)+'%';
- document.getElementById('missionText').textContent=`${state.missions.filter(Boolean).length} / 5`;
- document.getElementById('moneyText').textContent='$'+state.money.toLocaleString(undefined,{maximumFractionDigits:0});
- document.getElementById('streakText').textContent=state.streak+' days';
- const pct=moneyPct(); document.getElementById('moneyPct').textContent=pct.toFixed(0)+'%'; document.getElementById('moneyBar').style.width=pct+'%'; document.getElementById('caseFill').style.height=pct+'%';
- document.getElementById('goalInput').value=state.goal;document.getElementById('streakInput').value=state.streak;document.getElementById('xpInput').value=state.xp;document.getElementById('levelInput').value=state.level;
- const m=document.getElementById('missions');m.innerHTML='';missionData.forEach((x,i)=>{const row=document.createElement('label');row.className='mission';const cb=document.createElement('input');cb.type='checkbox';cb.checked=state.missions[i];cb.addEventListener('change',()=>{state.missions[i]=cb.checked;state.xp=Math.max(0,state.xp+(cb.checked?x[2]:-x[2]));if(state.xp>=1000){state.level+=Math.floor(state.xp/1000);state.xp%=1000;}save()});const text=document.createElement('div');text.innerHTML=`<strong>${x[0]}</strong><div class="muted">${x[1]}</div>`;const xp=document.createElement('span');xp.className='xp';xp.textContent='+'+x[2]+' XP';row.append(cb,text,xp);m.append(row)});
- const s=document.getElementById('systems');s.innerHTML='';state.systems.forEach(x=>{const d=document.createElement('div');d.className='system';d.innerHTML=`<div class="system-head"><strong>${x.name}</strong><span>${x.pct}%</span></div><p>${x.focus}</p><div class="bar"><div class="fill" style="width:${x.pct}%"></div></div>`;s.append(d)});
- const il=document.getElementById('incomeList');il.innerHTML='';state.incomes.slice().reverse().slice(0,8).forEach(x=>{const d=document.createElement('div');d.className='item';d.innerHTML=`<span>${x.source}<small class="muted"> • ${x.date}</small></span><strong>+$${Number(x.amount).toFixed(2)}</strong>`;il.append(d)});
- const cl=document.getElementById('captureList');cl.innerHTML='';state.captures.forEach((x,i)=>{const d=document.createElement('div');d.className='item';const span=document.createElement('span');span.textContent=x;const b=document.createElement('button');b.className='btn';b.textContent='Done';b.addEventListener('click',()=>{state.captures.splice(i,1);save()});d.append(span,b);cl.append(d)});
-}
-document.getElementById('addIncomeBtn').addEventListener('click',()=>{const amount=Number(document.getElementById('incomeInput').value);if(!amount||amount<0)return;const source=document.getElementById('incomeSource').value;state.money+=amount;state.incomes.push({amount,source,date:new Date().toLocaleDateString()});document.getElementById('incomeInput').value='';save()});
-document.getElementById('captureBtn').addEventListener('click',()=>{const el=document.getElementById('captureInput');const v=el.value.trim();if(!v)return;state.captures.unshift(v);el.value='';save()});
-document.getElementById('captureInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('captureBtn').click()});
-document.getElementById('saveSettingsBtn').addEventListener('click',()=>{state.goal=Math.max(1,Number(document.getElementById('goalInput').value)||state.goal);state.streak=Math.max(0,Number(document.getElementById('streakInput').value)||0);state.xp=Math.max(0,Number(document.getElementById('xpInput').value)||0);state.level=Math.max(1,Number(document.getElementById('levelInput').value)||1);save();document.querySelector('[data-tab="dashboard"]').click()});
-document.getElementById('resetBtn').addEventListener('click',()=>{state.missions=[false,false,false,false,false];save()});
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active')}));
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
-render();
-</script>
-</body></html>
+  <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
