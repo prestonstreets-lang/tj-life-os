@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 
 const commands = [
   ['node', ['--test', 'tests/progression-migration.test.mjs'], process.env],
+  ['node', ['--test', 'tests/v2.1-features.test.mjs'], process.env],
   ['node', ['--test', 'tests/date-only.test.mjs'], { ...process.env, TZ: 'America/New_York' }],
   ['node', ['--test', 'tests/date-only.test.mjs'], { ...process.env, TZ: 'America/Los_Angeles' }]
 ];

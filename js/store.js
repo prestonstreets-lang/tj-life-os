@@ -1,5 +1,6 @@
 import { createDefaultState, SCHEMA_VERSION, uid } from './data.js';
 import { migrateLegacyState } from './migration.js';
+import { hydrateState } from './state.js';
 
 const V2_KEY = 'ourLifeOS:v2';
 const LEGACY_KEY = 'tjLifeOS';
@@ -40,7 +41,11 @@ function validV2(value) {
 
 function loadInitialState() {
   const current = safeRead(V2_KEY);
-  if (validV2(current)) return current;
+  if (validV2(current)) {
+    const hydrated = hydrateState(current);
+    safeWrite(V2_KEY, hydrated);
+    return hydrated;
+  }
   const legacy = safeRead(LEGACY_KEY);
   const initial = legacy ? migrateLegacy(legacy) : createDefaultState();
   safeWrite(V2_KEY, initial);
@@ -80,7 +85,7 @@ export const store = {
   importData(json) {
     const parsed = typeof json === 'string' ? JSON.parse(json) : json;
     if (!validV2(parsed)) throw new Error('This file is not a valid Our Life OS V2 export.');
-    commit(clone(parsed));
+    commit(hydrateState(clone(parsed)));
   },
   resetV2() { commit(createDefaultState()); },
   consumeMigrationNotice() {
