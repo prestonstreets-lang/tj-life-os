@@ -44,12 +44,20 @@ export function migrateLegacyState(legacy, options = {}) {
   next.calendar = [];
   next.streaming = { setupProgress: 0, consistency: 0, sessionsThisMonth: 0, revenueMilestone: 0, schedule: [], pipeline: [], skills: [] };
   next.body = { calories: 0, calorieTarget: 0, protein: 0, proteinTarget: 0, water: 0, waterTarget: 0, workoutStreak: 0, muscleProgress: 0, workouts: [] };
-  next.learning = { weeklyMinutes: 0, weeklyTarget: 0, milestone: '', skills: [], resources: [] };
+  next.learning = { weeklyMinutes: 0, weeklyTarget: 0, milestone: '', paths: [], skills: [], resources: [], assets: [], milestones: [] };
   next.activity = [];
   next.captures = Array.isArray(legacy?.captures) ? legacy.captures.map(text => ({
     id: makeId('capture'), type: 'note', title: String(text), createdAt: nowIso, ownerId: 'household'
   })) : [];
   next.analytics = { dailyScores: [], summaries: { win: '', miss: '', priority: '' } };
+  next.visionBoards = [];
+  next.visionItems = [];
+  next.visionMedia = [];
+  next.goalLinks = [];
+  next.goalMilestones = [];
+  next.rewards = [];
+  next.rewardUnlocks = [];
+  next.motivationHistory = [];
   next.career = { ...next.career, opportunities: [], logs: [], searches: [], resumePrompts: [], activeJobId: null };
 
   return next;

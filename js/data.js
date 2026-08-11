@@ -1,15 +1,16 @@
-import { toLocalDateKey } from './date.js';
 import { DEFAULT_THEME_SETTINGS } from './themes.js';
+import { toLocalDateKey } from './date.js';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 4;
 
 export const SYSTEMS = {
   money: { label: 'Money', eyebrow: 'Financial command', icon: '◈', accent: '#5ef2a5' },
   missions: { label: 'Missions', eyebrow: 'Game system', icon: '✦', accent: '#b482ff' },
   streaming: { label: 'Streaming', eyebrow: 'Creator operations', icon: '◉', accent: '#ff5d8f' },
-  body: { label: 'Body', eyebrow: 'Bio systems', icon: '⬡', accent: '#ff9d5c' },
-  learning: { label: 'Learning', eyebrow: 'AI skill matrix', icon: '⌁', accent: '#63e6ff' },
+  body: { label: 'Fitness', eyebrow: 'Performance systems', icon: '⬡', accent: '#ff9d5c' },
+  learning: { label: 'Self Mastery', eyebrow: 'Personal growth academy', icon: '⌁', accent: '#63e6ff' },
   analytics: { label: 'Analytics', eyebrow: 'Signal observatory', icon: '⌁', accent: '#ffc857' },
+  vision: { label: 'Vision Board', eyebrow: 'Aspirational command', icon: '◐', accent: '#ffd66b' },
   calendar: { label: 'Calendar', eyebrow: 'Timeline command', icon: '▦', accent: '#63e6ff' },
   career: { label: 'Career', eyebrow: 'Opportunity command', icon: '⌖', accent: '#76e6b5' }
 };
@@ -50,7 +51,7 @@ export function createDefaultState() {
     },
     missions: [
       { id: 'mission-money', title: 'Protect the money plan', detail: 'Review cash, next bill and earning target', category: 'money', xp: 150, completed: false, recurring: 'daily', ownerId: 'household' },
-      { id: 'mission-body', title: 'Build the body', detail: 'Complete training and protein target', category: 'body', xp: 100, completed: true, recurring: 'daily', ownerId: 'member-1' },
+      { id: 'mission-body', title: 'Build fitness', detail: 'Complete training and protein target', category: 'body', xp: 100, completed: true, recurring: 'daily', ownerId: 'member-1' },
       { id: 'mission-stream', title: 'Creator mission', detail: 'Stream, configure, edit or publish', category: 'streaming', xp: 125, completed: false, recurring: 'weekdays', ownerId: 'member-2' },
       { id: 'mission-learn', title: 'Skill upgrade', detail: 'Finish one focused AI learning block', category: 'learning', xp: 75, completed: true, recurring: 'daily', ownerId: 'member-1' },
       { id: 'mission-reset', title: 'Reset the station', detail: 'Ten-minute household reset', category: 'household', xp: 50, completed: false, recurring: 'daily', ownerId: 'household' }
@@ -112,6 +113,7 @@ export function createDefaultState() {
     },
     learning: {
       weeklyMinutes: 210, weeklyTarget: 300, milestone: 'Build an AI-assisted household workflow',
+      paths: [], assets: [], milestones: [],
       skills: [
         { id: 'ai-prompts', title: 'Prompt Systems', xp: 780, level: 5, ownerId: 'member-1', x: 50, y: 16 },
         { id: 'ai-visual', title: 'AI Visuals', xp: 520, level: 3, ownerId: 'member-2', x: 22, y: 50 },
@@ -134,11 +136,22 @@ export function createDefaultState() {
     analytics: {
       dailyScores: [58, 72, 66, 81, 77, 91, 74],
       summaries: {
-        win: 'Learning consistency climbed for the third week in a row.',
+        win: 'Self Mastery consistency climbed for the third week in a row.',
         miss: 'Reserved funds are behind the rent allocation checkpoint.',
         priority: 'Close the daily earning gap before the next bill window.'
       }
     },
+    visionBoards: [],
+    visionItems: [],
+    visionMedia: [],
+    goalLinks: [],
+    goalMilestones: [],
+    rewards: [],
+    rewardUnlocks: [],
+    motivationSettings: { enabled:true, frequency:'daily', intensity:'balanced', autoRotate:true, effects:true, rotationOffset:0, featuredItemIds:[], customStatements:[], dismissedRules:[] },
+    motivationHistory: [],
+    automationRules: [],
+    automationHistory: [],
     career: {
       profile: { location: '', radius: 25, targetRoles: '', skills: '', salaryMin: 0, workMode: 'any', resumeText: '', ownerId: 'member-1' },
       opportunities: [], logs: [], searches: [], resumePrompts: [], activeJobId: null

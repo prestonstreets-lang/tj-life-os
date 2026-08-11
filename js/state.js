@@ -42,8 +42,11 @@ export function hydrateState(value = {}) {
     body: { ...defaults.body, ...current.body, workouts: list(current.body?.workouts, defaults.body.workouts) },
     learning: {
       ...defaults.learning, ...current.learning,
+      paths: list(current.learning?.paths, defaults.learning.paths),
       skills: list(current.learning?.skills, defaults.learning.skills),
-      resources: list(current.learning?.resources, defaults.learning.resources)
+      resources: list(current.learning?.resources, defaults.learning.resources),
+      assets: list(current.learning?.assets, defaults.learning.assets),
+      milestones: list(current.learning?.milestones, defaults.learning.milestones)
     },
     activity: list(current.activity, defaults.activity),
     captures: list(current.captures, defaults.captures),

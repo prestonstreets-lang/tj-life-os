@@ -5,9 +5,9 @@ export function parseVoiceCommand(transcript) {
   const text = raw.toLowerCase();
   if (!text) return { kind: 'empty' };
 
-  const routeMatch = text.match(/^(?:go to|open|show)\s+(home|money|missions?|streaming|body|learning|analytics|career|jobs?|settings)/);
+  const routeMatch = text.match(/^(?:go to|open|show)\s+(home|money|missions?|streaming|body|fitness|learning|self mastery|analytics|career|jobs?|settings)/);
   if (routeMatch) {
-    const route = routeMatch[1].replace(/^mission$/, 'missions').replace(/^jobs?$/, 'career');
+    const route = routeMatch[1].replace(/^mission$/, 'missions').replace(/^jobs?$/, 'career').replace(/^fitness$/, 'body').replace(/^self mastery$/, 'learning');
     return { kind: 'navigate', route };
   }
 
