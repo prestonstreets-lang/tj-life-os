@@ -1,5 +1,6 @@
 import { createDefaultState } from './data.js';
 import { normalizeThemeSettings } from './themes.js';
+import { normalizePracticeState } from './practices.js';
 
 const list = (value, fallback) => Array.isArray(value) ? value : fallback;
 
@@ -24,6 +25,7 @@ export function hydrateState(value = {}) {
       achievements: list(current.game?.achievements, defaults.game.achievements)
     },
     missions: list(current.missions, defaults.missions),
+    practice: normalizePracticeState(current.practice ?? defaults.practice),
     finance: {
       ...defaults.finance, ...current.finance,
       income: list(current.finance?.income, defaults.finance.income),
