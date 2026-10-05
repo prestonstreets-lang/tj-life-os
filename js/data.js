@@ -1,11 +1,12 @@
 import { DEFAULT_THEME_SETTINGS } from './themes.js';
 import { toLocalDateKey } from './date.js';
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const SYSTEMS = {
   money: { label: 'Money', eyebrow: 'Financial command', icon: '◈', accent: '#5ef2a5' },
   missions: { label: 'Missions', eyebrow: 'Game system', icon: '✦', accent: '#b482ff' },
+  routines: { label: 'Daily Systems', eyebrow: 'Personal systems', icon: '◎', accent: '#9b7cff' },
   streaming: { label: 'Streaming', eyebrow: 'Creator operations', icon: '◉', accent: '#ff5d8f' },
   body: { label: 'Fitness', eyebrow: 'Performance systems', icon: '⬡', accent: '#ff9d5c' },
   learning: { label: 'Self Mastery', eyebrow: 'Personal growth academy', icon: '⌁', accent: '#63e6ff' },
@@ -49,6 +50,7 @@ export function createDefaultState() {
         { id: 'ach-3', title: 'Perfect Circuit', detail: 'Complete five Perfect Days', earned: false, progress: 60, icon: '◎' }
       ]
     },
+    practice: { libraryVersion: 1, items: [], history: [], weekPlans: [], currentWeekStart: '' },
     missions: [
       { id: 'mission-money', title: 'Protect the money plan', detail: 'Review cash, next bill and earning target', category: 'money', xp: 150, completed: false, recurring: 'daily', ownerId: 'household' },
       { id: 'mission-body', title: 'Build fitness', detail: 'Complete training and protein target', category: 'body', xp: 100, completed: true, recurring: 'daily', ownerId: 'member-1' },
