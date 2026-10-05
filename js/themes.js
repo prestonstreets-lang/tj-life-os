@@ -19,6 +19,10 @@ export const THEME_PACKS = {
     name: 'Royal Spectrum', detail: 'Indigo, ultraviolet and luminous rose', icon: '◇',
     colors: { bg: '#0b0618', bg2: '#1b0c31', panel: '37,20,66', accent: '#b482ff', accent2: '#ff6fcf', accent3: '#63b8ff', text: '#fff7ff', muted: '#b09bc6', glow: '180,130,255' }
   },
+  'royal-purple': {
+    name: 'Royal Purple', detail: 'Regal violet with orchid light and a cool teal counterpoint', icon: '♢',
+    colors: { bg: '#090512', bg2: '#180b2b', panel: '40,23,67', accent: '#8b5cf6', accent2: '#c084fc', accent3: '#2dd4bf', text: '#fffaff', muted: '#b8a8cf', glow: '139,92,246' }
+  },
   'stealth-ops': {
     name: 'Stealth Ops', detail: 'Graphite instruments with precise ice signals', icon: '⬡',
     colors: { bg: '#050709', bg2: '#11161d', panel: '22,28,37', accent: '#c6f4ff', accent2: '#7c91ad', accent3: '#76e6b5', text: '#f5f7fa', muted: '#8c98a8', glow: '198,244,255' }
