@@ -40,7 +40,7 @@ function migrateLegacy(legacy) {
 }
 
 function validV2(value) {
-  return value && [2,3,SCHEMA_VERSION].includes(value.schemaVersion) && value.household && Array.isArray(value.household.members);
+  return value && [2,3,4,SCHEMA_VERSION].includes(value.schemaVersion) && value.household && Array.isArray(value.household.members);
 }
 
 function loadInitialState() {
