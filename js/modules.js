@@ -1,5 +1,6 @@
 export const MODULE_REGISTRY = Object.freeze([
   { id:'vision', version:'2.2', capability:'Offline image vault and goal links', adapter:'media' },
+  { id:'routines', version:'3.0', capability:'Searchable practice library, custom habits and goals, weekly planning, preserved history', adapter:'practices' },
   { id:'calendar', version:'2.1', capability:'Month, week, and day timeline', adapter:'calendar' },
   { id:'career', version:'2.1', capability:'Job pipeline and resume prompts', adapter:'jobs' },
   { id:'streaming', version:'2.0', capability:'Creator pipeline and skill tree', adapter:'creator' },
