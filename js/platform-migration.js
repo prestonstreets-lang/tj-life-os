@@ -1,4 +1,5 @@
-export const PLATFORM_SCHEMA_VERSION = 4;
+import { normalizePracticeState } from './practices.js';
+export const PLATFORM_SCHEMA_VERSION = 5;
 const list=value=>Array.isArray(value)?value:[];
 
 export function upgradePlatformState(value) {
@@ -12,6 +13,7 @@ export function upgradePlatformState(value) {
   state.learning.milestones=list(state.learning.milestones);
   state.automationRules=list(state.automationRules);
   state.automationHistory=list(state.automationHistory);
+  state.practice=normalizePracticeState(state.practice);
   state.settings={dashboardModules:[],...state.settings};
   return state;
 }
