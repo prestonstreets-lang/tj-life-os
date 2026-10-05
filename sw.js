@@ -1,4 +1,4 @@
-const VERSION = 'our-life-os-v2.3.0-platform';
+const VERSION = 'our-life-os-v3.0.0-personal-systems';
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const APP_SHELL = [
@@ -8,7 +8,7 @@ const APP_SHELL = [
   './js/vision-migration.js', './js/media-store.js',
   './js/themes.js', './js/career.js', './js/voice.js', './js/state.js', './js/calendar.js',
   './js/mastery.js', './js/platform-migration.js',
-  './js/automation.js', './js/modules.js',
+  './js/automation.js', './js/modules.js', './js/practices.js',
   './assets/icon.svg', './assets/icon-180.png', './assets/icon-192.png',
   './assets/icon-512.png', './assets/icon-maskable-192.png', './assets/icon-maskable-512.png'
 ];
